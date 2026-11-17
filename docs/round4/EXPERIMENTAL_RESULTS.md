@@ -131,6 +131,8 @@ BPIC13 incidents E1 stopped after 236,445 variants at the 240-second session lim
 
 BPIC13 incidents E3 completed 9,915 prefixes before its first 300-second quota, then 7,487 more in 282.28 seconds. The auditor verified every sealed prefix unit and reconstructed the reported summary. BPIC12_O graph edge membership matched the GraphML export and the SVG was visually checked.
 
+The BPIC13 incidents BE export has three nodes and six directed edges, including three self-loops. All six arrowheads and the three activity labels are visible in `artifacts/graph-qa/bpic13-i-BE.png`. The GraphML, graph JSON and SVG hashes match the export receipt. The three verified BPIC12_O studies were also plotted and visually checked. The plots and exact ten-seed E2 CSV are under `artifacts/figures/bpic12-o-v1/`.
+
 The completed BPIC12_WC E1 and Helpdesk E3 results passed the streamed-study audit, including prepared and checkpoint hashes, full cohort membership, every SQLite record seal and reconstructed summaries. The independent exact schedule count also matched all BPIC12_WC E1 variants.
 
 BPIC12_O E2 resumed under the identical source snapshot after a quota stop at 54,341 records. The second session added 23,289 records in 326.53 seconds. The auditor verified all ten arms and model checkpoints. Helpdesk E1 passed the same artifact audit and matched its independently computed variant count.
