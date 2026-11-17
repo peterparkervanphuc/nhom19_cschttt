@@ -154,15 +154,18 @@ def _completed_graph(path, method, predictor, dataset, prefix_ids):
 
 
 def run_evaluation(prepared: dict, checkpoint: Path, directory: Path, *,
-                   be_only: bool = False, baseline_be: Path | None = None) -> dict:
+                   be_only: bool = False, baseline_be: Path | None = None,
+                   cache_policy: str = "all") -> dict:
     """Evaluate the locked cohort, with optional independent reporting for BE."""
     if baseline_be is not None and not be_only:
         raise ValueError("An existing BE graph can only be supplied to BE-only evaluation")
+    if cache_policy not in {"all", "baseline"}:
+        raise ValueError("Unknown cache policy")
     with run_lock(directory):
-        return _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be)
+        return _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be, cache_policy)
 
 
-def _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be):
+def _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be, cache_policy):
     output = directory / "evaluation.json"
     if output.exists():
         raise FileExistsError("Evaluation output already exists")
@@ -193,7 +196,7 @@ def _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be):
         graph_jobs.insert(0, (checkpoint, "baseline-graphs"))
     graph_runs = {}
     for model_path, folder in graph_jobs:
-        status = run_explainers(prepared, model_path, directory / folder, be_only=be_only)
+        status = run_explainers(prepared, model_path, directory / folder, be_only=be_only, cache_policy=cache_policy)
         if status["be_status"] != "completed":
             raise RuntimeError("BE graph paused at a resource floor; resume the same evaluation command")
         graph_runs[folder] = {"ae_status": status["status"], "ae_expected": status["expected"],
@@ -232,6 +235,7 @@ def _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be):
                            "global_compactness": compactness(baseline_edges[method])}
     result = {"status": "completed", "scope": prepared.get("scope"), "identity": baseline.identity,
               "evaluation_mode": "be-only" if be_only else "paired",
+              "cache_policy": cache_policy,
               "paired_status": "not_evaluated" if be_only else "completed",
               "graph_receipts": graph_receipts, "graph_runs": graph_runs,
               "baseline_checkpoint": baseline.checkpoint_id, "candidates": candidates, "selected": selected,

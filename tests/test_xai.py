@@ -76,7 +76,9 @@ def test_co03_and_all_xai_outputs(tmp_path):
     assert checked["status"] == "verified" and checked["verified_method_records"] == 4
     original = tmp_path / "eval/baseline-graphs/BE.json"
     be_result = run_evaluation(data, tmp_path / "base/checkpoint.pt", tmp_path / "be",
-                               be_only=True, baseline_be=original)
+                               be_only=True, baseline_be=original, cache_policy="baseline")
+    assert be_result["cache_policy"] == "baseline"
+    assert read_sealed(tmp_path / "be/candidate-graphs/BE.json")["identity"]["cache_policy"] == "baseline"
     assert be_result["methods"] == {"BE": result["methods"]["BE"]}
     assert be_result["paired_status"] == "not_evaluated"
     assert be_result["paired_AE_minus_BE"] is None
