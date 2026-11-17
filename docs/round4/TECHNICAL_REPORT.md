@@ -21,7 +21,7 @@ The paper and locked Round 3.6 decisions define the baseline. The sibling author
 
 | Scope | Measured result | Interpretation |
 |---|---|---|
-| BPIC13-CP predictive performance | Accuracy .565438 and weighted F1 .521779 on all 1,574 prefixes | The published figures are .83 and .76. The pinned source schedule of 5 epochs and batch 50 produced .559720 and .517447 with the independent model. Schedule alone did not explain the gap. |
+| BPIC13-CP predictive performance | Accuracy .565438 and weighted F1 .521779 on all 1,574 prefixes | The archived configuration and pinned evaluation use last-prefix labels. On those labels a constant Accepted baseline reproduces .831763 accuracy, .755370 weighted F1 and all eight other archived aggregates. The archived test cohort also differs from the independent one. |
 | BPIC13-CP E1 | Mean tau-b .245327 over 856 valid results, with 718 undefined | Nulls stay excluded from the mean. The independent workload counter matches all 15,569 evaluated variants. |
 | BPIC13-CP E2 | Five BASE and five frozen-constant comparisons. Mean JSD per seed .007405–.024901 for BASE and .00482464–.00482480 for frozen-constant | Descriptive results for the locked comparison and this split. |
 | BPIC13-CP E3 | Mean prefix TVD .222190 over 1,574 prefixes | Paper masking profile. |
