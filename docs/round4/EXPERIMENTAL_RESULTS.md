@@ -292,9 +292,17 @@ For E3, the archive records one TVD per masked occurrence. The independent prima
 | Log | Independent masked occurrences | Independent pooled median TVD | Archived masked occurrences | Archived pooled median TVD |
 |---|---:|---:|---:|---:|
 | Helpdesk | 12,547 | .129620 | 2,918 | .056731 |
+| BPIC12_O | 31,039 | .071677 | 6,376 | .003090 |
+| BPIC12_WC | 143,848 | .011058 | 39,060 | .001788 |
+| BPIC13_CP | 6,243 | .055525 | 5,955 | .003920 |
+| BPIC13 incidents | 146,211 | .017057 | 41,902 | .003688 |
+| Sepsis | 60,338 | .022247 | 45,126 | .006061 |
+| Complex-Model | 196,047 | .016654 | 29,575 | .003593 |
 | Sequence | 19,800 | .00000645 | 61 | .0000286 |
 | Long-Dist-Dep | 7,399 | .000238 | 53 | .001476 |
 | Looped-AND | 164,829 | .009520 | 52,825 | .000089 |
+
+All ten independent rows above passed occurrence-ID alignment and per-occurrence TVD recomputation, followed by exact reconstruction of the stored prefix summaries. The occurrence-weighted distributions supplement the primary equal-prefix summaries. The archived values describe different sampled cohorts and the source masking implementation.
 
 ### Sequence BPMN comparison
 
