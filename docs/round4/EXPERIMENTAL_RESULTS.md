@@ -97,6 +97,10 @@ Sepsis E1's bounded DFG path counter found at least 204,539 variants in the 12 s
 
 Streaming E1 completed two Sepsis sessions on this unchanged schedule: 10,000 variants followed by 5,000 new variants. The ledger occupies 22,151,168 bytes and contains two completed prefixes. The second session took 2.891 seconds. A linear projection from this early section is about 3.58 TB and 16.2 days at the measured wall rate. Prefix lengths, model cost, storage overhead and hardware contention vary, so this is only an order-of-magnitude estimate. Source and checkpoint identity and the quota stop are recorded in `artifacts/sepsis-v1/E1-stream-e1-run/progress.json`; estimates are in the sibling `workload-estimate.json`. No full-log Sepsis E1 correlation is available.
 
+Full BPIC12 E1 has a verified lower bound of **2,440,580,925 variants** on 73,742 prefixes. The raw-XES scan rebuilt the fixed seed-42 split and training DFG. It counted every mask and boundary replacement, then retained only interior simple paths in the subgraph induced by the 14 highest-degree activities, excluding self-loops when ranking degree and breaking ties by label. Each retained neighbor-pair path count was weighted by its number of eligible occurrences in the test prefix set, with identity replacements removed. The schedule requires over 312 GB of logical text even if each persisted row contained only its 64-byte prefix ID and 64-byte record seal. The available project drive had under 44 GB free. The counter was a resource gate and yielded no E1 correlations. The activity subset and per-pair evidence are in `artifacts/bpic12-v1/E1-workload-lower-bound.json`.
+
+BPIC12_W has an exact E1 schedule of **1,334,973 variants** on 47,280 prefixes. Its first bounded session persisted 100,000 variants and finished 3,253 prefixes in 100.80 seconds. The same ledger resumed with its original source and checkpoint. This partial session provides throughput and storage evidence, with full metrics pending.
+
 BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 variants on 1,574 prefixes. Every ordered variant record matched the original full E1 run. The compared importance vectors and tau-b scores also matched exactly. The completed manifest is `artifacts/bpic13-cp-v1/E1-stream.json`.
 
 | Log and study | Completed units | Measured result | Evidence under `artifacts/` |
@@ -111,6 +115,7 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC13-CP AE | 1/809,189,178 contexts | Incomplete. The BE pass established the exact workload over all test prefixes | `bpic13-cp-v1/explain-v1/coverage.json` |
 | BPIC13 incidents E1 | 17,402/17,402 prefixes, 304,355 variants | Mean tau-b .699499, SD .644450, 12,498 valid and 4,904 undefined | `bpic13-i-v1/E1-stream.json` |
 | BPIC13 incidents E3 | 17,402/17,402 prefixes | Mean prefix TVD .152617, SD .158701 | `bpic13-i-v1/E3-stream.json` |
+| BPIC13 incidents BE | 17,402/17,402 prefixes | Six directed edges. The independent graph audit rebuilt a schedule of 15,950,735,951,275,900,776,544,602,750,118,088,858 AE contexts with a maximum of 121 eligible positions. | `bpic13-i-v1/be-only-v1/graph-audit.json` |
 | BPIC12_O E1 | 7,763/7,763 prefixes, 67,722 variants | Mean tau-b .712442, SD .370154, 6,197 valid and 1,566 undefined | `bpic12-o-v1/E1-stream.json` |
 | BPIC12_O E2-FC | 77,630/77,630 paired prefix records | Seed mean JSD .002668–.003713 for BASE and .00163521–.00163549 for FC. Seed mean prediction TVD .025136–.055303 for BASE and .026869–.039663 for FC | `bpic12-o-v1/E2-stream.json` |
 | BPIC12_O E3-PAPER | 7,763/7,763 prefixes | Mean prefix TVD .384329, SD .309039. All records passed the streamed-study audit | `bpic12-o-v1/E3-stream.json` |

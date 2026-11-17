@@ -100,3 +100,5 @@ Helpdesk completed E2 on all 49,830 arm-prefix pairs and passed the ledger audit
 Looped-AND E3-PAPER completed 10,873 prefixes and passed the streamed record audit. The other synthetic E3 run, Complex-Model, preserved its first 1,803 records at the RAM floor and resumed from that count.
 
 All twelve archived SavedModels were replayed on CPU for both target conventions. Ten runs matched every stored aggregate under the last-prefix convention. Helpdesk and Sepsis differed under both serving-signature and Keras loading despite loader agreement on prediction counts and numerical aggregates. The complete per-log receipts and aggregate audit are in `artifacts/author-runtime/`.
+
+BPIC13-I completed BE over all 17,402 prefixes. The replayed graph and per-prefix counts establish an exhaustive AE workload of approximately `1.595 × 10^37` contexts. Full BPIC12 E1 was resource-gated at a proven lower bound of 2,440,580,925 variants. BPIC12_W E1 has a much smaller exact schedule of 1,334,973 variants. It resumed after checkpointing its first 100,000, and Sepsis E2 began.
