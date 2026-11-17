@@ -108,6 +108,7 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | Log and study | Completed units | Measured result | Evidence under `artifacts/` |
 |---|---:|---|---|
 | Sepsis E3-PAPER | 4,479/4,479 prefixes | Mean prefix TVD .157010, SD .174390 | `sepsis-v1/E3-stream.json` |
+| Sepsis E2-FC | 44,790/44,790 model–prefix pairs | Mean JSD across each seed's cohort ranged .026494–.037467 for BASE and .02068012–.02068065 for FC. Mean TVD ranged .109344–.141047 and .119721–.169451, respectively. | `sepsis-v1/E2-stream.json` |
 | Sepsis BE | 4,479/4,479 prefixes | Global graph with 14 nodes and 16 directed edges | `sepsis-v1/graphs/BE-v2/manifest.json` |
 | Sepsis AE | 0 of approximately 9.5781 × 10^52 contexts | Exact full-set schedule computed from complete BE, with k min/median/p95/max 0/5/29.1/174 | `sepsis-v1/be-only-v1/coverage.json` |
 | BPIC13-CP E1 | 1,574/1,574 prefixes, 15,569 variants | Mean tau-b .245327, SD .940071, 856 valid and 718 undefined | `bpic13-cp-v1/E1.json` |
@@ -142,6 +143,8 @@ The completed BPIC12_WC E1 and Helpdesk E3 results passed the streamed-study aud
 BPIC12_O E2 resumed under the identical source snapshot after a quota stop at 54,341 records. The second session added 23,289 records in 326.53 seconds. The auditor verified all ten arms and model checkpoints. Helpdesk E1 passed the same artifact audit and matched its independently computed variant count.
 
 Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second session resumed from the exact source snapshot, preserving prior units. Total wall time across these sessions was 608.32 seconds. BPIC13-CP E2 used five fresh BASE and five frozen-constant seeds, with 10 epochs each. Figure files in `artifacts/figures/bpic13-cp-v2/` show the E1 distribution, the descriptive E2 scatter and the E3 distribution. Its CSV preserves the ten exact seed means when markers overlap.
+
+Sepsis E2 completed in 966.89 seconds. Its ledger audit verified all ten model checkpoints, the entire cohort for every arm and seed, and the recomputed maximum-attention bins and TVD filters. Frozen-constant comparisons had lower attention JSD across all ten seed means and overlapping prediction TVD ranges with BASE. These are descriptive results for the independent models. See `artifacts/sepsis-v1/e2-record-audit.json`.
 
 BPIC12_WC E3 completed 7,185, 8,394 and 2,893 new records across three sessions. The first session stopped at the available-RAM floor and the second at its wall-time quota. The final session used the identical source snapshot and completed all remaining units. The independent ledger audit verified coverage and aggregation from the 18,472 records in `artifacts/bpic12-wc-v1/e3-record-audit.json`.
 

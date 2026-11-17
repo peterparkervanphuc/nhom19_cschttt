@@ -59,7 +59,7 @@ All twelve logs have audited next-activity predictions. A workload count describ
 | BPIC13_CP | Verified | Verified | Verified | Verified | 809,189,178 contexts. At least 241 GB of context text, storage-limited. BE-only evaluation verified. |
 | BPIC13 incidents | Verified | Pending | Verified | Verified | Approximately 1.595 × 10^37 scheduled contexts |
 | Helpdesk | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
-| Sepsis | 15,000 of 2,425,371,457 variants persisted | Resumable run | Verified | Verified | Approximately 9.578 × 10^52 scheduled contexts |
+| Sepsis | 15,000 of 2,425,371,457 variants persisted | Verified | Verified | Verified | Approximately 9.578 × 10^52 scheduled contexts |
 | Complex-Model | 15,755,268,423 variants scheduled | Pending | Verified | Verified | Approximately 4.058 × 10^20 scheduled contexts |
 | Long-Dist-Dep | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
 | Looped-AND | Verified | Pending | Verified | Verified | Approximately 1.219 × 10^27 scheduled contexts |
