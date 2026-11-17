@@ -3,6 +3,7 @@
 import argparse
 from contextlib import closing
 import json
+from math import floor
 from pathlib import Path
 import sqlite3
 
@@ -68,10 +69,14 @@ def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
     require([(row["arm"], row["seed"]) for row in manifest["pairs"]] == schedule,
             "Arms or seeds differ from the fixed schedule")
     count = 0
+    bins = {}
     for arm in manifest["pairs"]:
         if study == "E2":
             trained = ledger.parent / "models" / f'{arm["arm"]}-{arm["seed"]}' / "checkpoint.pt"
             require(file_hash(trained) == arm["checkpoint_sha256"], "E2 trained checkpoint checksum mismatch")
+            arm_bins = bins.setdefault(arm["arm"], {
+                "raw_all": [0] * 4, "l1_all": [0] * 4, "raw_tvd_at_most_point_one": [0] * 4,
+            })
         ids, primary, secondary = set(), [], []
         for prefix_id, raw in db.execute(
                 "SELECT prefix_id,payload FROM records WHERE arm=? AND seed=? ORDER BY prefix_id",
@@ -82,6 +87,17 @@ def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
             if study == "E2":
                 require(row["baseline_checkpoint"] == checkpoint and
                         row["modified_checkpoint"] == arm["checkpoint_sha256"], "E2 checkpoint mismatch")
+                raw_max, l1_max = row["max_raw"], row["max_l1"]
+                require(0 <= raw_max <= 1 and 0 <= l1_max <= 1, "E2 attention maximum outside [0,1]")
+                raw_bin, l1_bin = min(3, floor(4 * raw_max)), min(3, floor(4 * l1_max))
+                passes_filter = row["prediction_tvd"] <= .1
+                require((raw_bin, l1_bin, passes_filter) ==
+                        (row["raw_bin"], row["l1_bin"], row["author_tvd_filter"]),
+                        f"E2 attention bin or TVD filter mismatch: {prefix_id}")
+                arm_bins["raw_all"][raw_bin] += 1
+                arm_bins["l1_all"][l1_bin] += 1
+                if passes_filter:
+                    arm_bins["raw_tvd_at_most_point_one"][raw_bin] += 1
                 primary.append(row["jsd"])
                 secondary.append(row["prediction_tvd"])
             else:
@@ -98,7 +114,7 @@ def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
     ledger_count = db.execute("SELECT COUNT(*) FROM records").fetchone()[0]
     require(count == ledger_count == manifest["completed_units"] == manifest["expected_units"],
             "Study unit totals disagree")
-    return count
+    return count, bins
 
 
 def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
@@ -120,15 +136,19 @@ def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
     ledger = manifest_path.parent / manifest["records_database"]
     require(file_hash(ledger) == manifest["records_sha256"], "Ledger SHA-256 mismatch")
     with closing(sqlite3.connect(ledger.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        bins = {}
         if study == "E1":
             require(workload_path is not None, "E1 needs an independently generated exact schedule count")
             workload = read_sealed(workload_path)
             require(workload["prepared_sha256"] == file_hash(prepared_path), "E1 workload input differs")
             units = audit_e1(db, manifest, prefixes, workload["variant_count"])
         else:
-            units = audit_e2_e3(db, ledger, manifest, prefixes, checkpoint)
-    return {"status": "verified", "study": study, "prefixes": len(prefixes), "units": units,
-            "manifest_sha256": file_hash(manifest_path), "records_sha256": manifest["records_sha256"]}
+            units, bins = audit_e2_e3(db, ledger, manifest, prefixes, checkpoint)
+    result = {"status": "verified", "study": study, "prefixes": len(prefixes), "units": units,
+              "manifest_sha256": file_hash(manifest_path), "records_sha256": manifest["records_sha256"]}
+    if bins:
+        result["attention_bins_by_arm"] = bins
+    return result
 
 
 if __name__ == "__main__":
