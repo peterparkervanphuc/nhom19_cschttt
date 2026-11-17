@@ -1,6 +1,7 @@
 """Single-command execution with validated stage receipts for resume."""
 
 import json
+import math
 from pathlib import Path
 
 from .artifacts import read_sealed, seal, write_json
@@ -9,13 +10,20 @@ from .model.predictor import Predictor
 from .model.training import run_lock, source_hash
 
 
-def _stage_files(name: str, artifact: Path, directory: Path) -> list[Path]:
+def _study_directory(name: str, directory: Path) -> Path:
+    return directory / ("E1-e1-run" if name == "E1" else f"{name}-run")
+
+
+def _stage_files(name: str, artifact: Path, directory: Path, streaming: bool) -> list[Path]:
     """Immutable outputs needed to interpret/replay a completed stage."""
     files = {artifact}
     if name == "train":
         files.add(directory / "base/run.json")
-    elif name == "E2":
-        for model_dir in (directory / "E2-models").iterdir():
+    if streaming and name in {"E1", "E2", "E3"}:
+        files.add(_study_directory(name, directory) / "records.sqlite")
+    if name == "E2":
+        models = _study_directory(name, directory) / "models" if streaming else directory / "E2-models"
+        for model_dir in models.iterdir():
             if model_dir.is_dir():
                 files.update([model_dir / "checkpoint.pt", model_dir / "run.json"])
     elif name == "evaluate":
@@ -33,7 +41,43 @@ def _stage_files(name: str, artifact: Path, directory: Path) -> list[Path]:
     return sorted(files)
 
 
-def _validate_publication(name: str, artifact: Path, directory: Path, config: dict, raw_hash: str) -> None:
+def _validate_streamed_study(name: str, payload: dict, directory: Path, prepared: dict, predictor: Predictor) -> None:
+    identity = payload["identity"]
+    prefix_ids = [row["prefix_id"] for row in prepared["prefixes"]["test"]]
+    expected = len(prefix_ids)
+    if (payload["status"] != "completed" or payload["study"] != name or identity["study"] != name
+            or identity["dataset"] != predictor.identity["dataset_sha256"]
+            or identity["checkpoint"] != predictor.checkpoint_id
+            or identity["source"] != source_hash()
+            or sorted(identity["prefix_ids"]) != sorted(prefix_ids)
+            or payload["baseline_checkpoint"] != predictor.checkpoint_id
+            or payload["completed_prefixes"] != expected or payload["expected_prefixes"] != expected):
+        raise ValueError(f"Streamed study publication mismatch: {name}")
+    ledger = _study_directory(name, directory) / "records.sqlite"
+    if Path(payload["records_database"]) != ledger.relative_to(directory) or file_hash(ledger) != payload["records_sha256"]:
+        raise ValueError(f"Streamed study ledger checksum mismatch: {name}")
+    if name == "E1":
+        records = payload["records"]
+        if sorted(row["prefix_id"] for row in records) != sorted(prefix_ids):
+            raise ValueError("Incomplete E1 prefix records")
+        return
+    arms = ([("BASE", seed) for seed in range(2001, 2006)] + [("E2-FC", seed) for seed in range(2006, 2011)]
+            if name == "E2" else [("E3-PAPER", None)])
+    if (payload["profile"] != ("E2-FC" if name == "E2" else "E3-PAPER")
+            or [(pair["arm"], pair["seed"]) for pair in payload["pairs"]] != arms
+            or payload["completed_units"] != expected * len(arms)
+            or payload["expected_units"] != payload["completed_units"]
+            or any(pair["completed_prefixes"] != expected for pair in payload["pairs"])):
+        raise ValueError(f"Incomplete streamed study schedule: {name}")
+    if name == "E2":
+        for pair in payload["pairs"]:
+            model = ledger.parent / "models" / f"{pair['arm']}-{pair['seed']}" / "checkpoint.pt"
+            if file_hash(model) != pair["checkpoint_sha256"]:
+                raise ValueError("Streamed E2 checkpoint checksum mismatch")
+
+
+def _validate_publication(name: str, artifact: Path, directory: Path, config: dict,
+                          raw_hash: str, streaming: bool) -> None:
     """Validate an orphaned atomic output against the persisted stage intent.
 
     Recovery is only allowed for the active stage, with unchanged input/source
@@ -46,6 +90,9 @@ def _validate_publication(name: str, artifact: Path, directory: Path, config: di
         return
     prepared = read_sealed(directory / "prepared.json")
     predictor = Predictor(directory / "base/checkpoint.pt", prepared)
+    if streaming and name in {"E1", "E2", "E3"}:
+        _validate_streamed_study(name, payload, directory, prepared, predictor)
+        return
     if name.startswith("graph-"):
         method = name.removeprefix("graph-")
         source = directory / "evaluation/baseline-graphs" / f"{method}.json"
@@ -87,14 +134,19 @@ def _validate_publication(name: str, artifact: Path, directory: Path, config: di
                     raise ValueError("Evaluation graph publication mismatch")
 
 
-def run_pipeline(dataset_config: Path, training_config: Path, directory: Path) -> dict:
+def run_pipeline(dataset_config: Path, training_config: Path, directory: Path, *,
+                 streaming: bool = False, study_max_seconds: float = 3600) -> dict:
     from .__main__ import main
+    if not math.isfinite(study_max_seconds) or study_max_seconds <= 0:
+        raise ValueError("Study wall time quota must be finite and positive")
     dataset_config, training_config = dataset_config.resolve(), training_config.resolve()
     directory = directory.resolve()
     config = json.loads(dataset_config.read_text(encoding="utf-8-sig"))
     raw_hash = file_hash((dataset_config.parent / config["path"]).resolve())
     identity = {"dataset_config": file_hash(dataset_config), "training_config": file_hash(training_config),
                 "raw_data": raw_hash, "source": source_hash(), "schema_version": 2}
+    if streaming:
+        identity["streaming_studies"] = True
     progress_path = directory / "pipeline.json"
     prepared = directory / "prepared.json"
     checkpoint = directory / "base/checkpoint.pt"
@@ -106,7 +158,10 @@ def run_pipeline(dataset_config: Path, training_config: Path, directory: Path) -
     ]
     for name in ("E1", "E2", "E3"):
         output = directory / f"{name}.json"
-        stages.append((name, ["experiment", name, *prediction_args, "--output", str(output)], output))
+        command = ["experiment", name, *prediction_args, "--output", str(output)]
+        if streaming:
+            command.extend(["--streaming", "--max-seconds", str(study_max_seconds)])
+        stages.append((name, command, output))
     stages.append(("evaluate", ["evaluate", *prediction_args, "--output", str(directory / "evaluation")],
                    directory / "evaluation/evaluation.json"))
     for method in ("BE", "AE"):
@@ -135,14 +190,22 @@ def run_pipeline(dataset_config: Path, training_config: Path, directory: Path) -
                 raise FileExistsError(f"Unowned stage output: {name}")
             progress["active_stage"] = name
             progress["status"] = "incomplete"
+            progress.pop("study_progress", None)
             write_json(progress_path, seal(progress))
             if name == "train" and artifact.exists():
                 command.append("--resume")
             if name == "train" or not artifact.exists():
                 main(command)
+            if streaming and name in {"E1", "E2", "E3"} and not artifact.exists():
+                study_progress = _study_directory(name, directory) / "progress.json"
+                if read_sealed(study_progress)["status"] != "incomplete":
+                    raise ValueError(f"Missing publication for streamed study: {name}")
+                progress["study_progress"] = str(study_progress.relative_to(directory))
+                write_json(progress_path, seal(progress))
+                return progress
             if name != "train":
-                _validate_publication(name, artifact, directory, config, raw_hash)
-            files = _stage_files(name, artifact, directory)
+                _validate_publication(name, artifact, directory, config, raw_hash, streaming)
+            files = _stage_files(name, artifact, directory, streaming)
             progress["completed"][name] = {"artifact": str(artifact.relative_to(directory)),
                                             "sha256": file_hash(artifact), "command": command,
                                             "files": {str(path.relative_to(directory)): file_hash(path) for path in files}}
