@@ -17,9 +17,11 @@ def require(condition, message):
         raise ValueError(message)
 
 
-def context_rows(db, prefixes, relevant_positions):
+def context_rows(db, prefixes, relevant_positions, targets_by_prefix):
     for prefix_id, prefix in prefixes.items():
         positions = relevant_positions[prefix_id]
+        prefix_positions = set(range(len(prefix["activities"])))
+        targets = targets_by_prefix[prefix_id]
         limit = 1 << len(positions)
         for scenario in ("most", "few"):
             rows = db.execute(
@@ -37,16 +39,27 @@ def context_rows(db, prefixes, relevant_positions):
                         == (prefix_id, scenario, subset, len(positions)), "AE context key mismatch")
                 chosen = {position for bit, position in enumerate(positions) if count & (1 << bit)}
                 if scenario == "most":
-                    chosen = set(range(len(prefix["activities"]))) - chosen
+                    chosen = prefix_positions - chosen
                 require(context["masked_positions"] == sorted(chosen), "AE intervention differs from subset")
+                seen = {target: set() for target in targets}
+                vote_groups = set()
                 for vote in context["votes"]:
                     indices = vote["positions"]
-                    require(indices and all(0 <= index < len(prefix["activities"]) for index in indices)
+                    target, side = vote["target"], vote["side"]
+                    index_set = set(indices)
+                    group = (target, vote["source"], side)
+                    require(target in targets and group not in vote_groups and indices
+                            and len(index_set) == len(indices) and index_set <= prefix_positions
+                            and seen[target].isdisjoint(index_set)
                             and all(prefix["activities"][index] == vote["source"] for index in indices)
                             and vote["occurrence_ids"] == [prefix["occurrence_ids"][index] for index in indices]
-                            and vote["side"] in {"masked", "visible"}
-                            and all((index in chosen) == (vote["side"] == "masked") for index in indices),
+                            and side in {"masked", "visible"}
+                            and all((index in chosen) == (side == "masked") for index in indices),
                             "AE vote occurrence does not match the recorded intervention")
+                    seen[target].update(index_set)
+                    vote_groups.add(group)
+                require(all(indices == prefix_positions for indices in seen.values()),
+                        "AE votes do not cover all occurrences for every selected target")
                 yield context
                 count += 1
             require(count == limit, "AE subset schedule incomplete")
@@ -68,22 +81,36 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
             and identity["checkpoint"] == file_hash(checkpoint_path)
             and identity["prefix_ids"] == list(prefixes), "Explainer identity mismatch")
     del prepared
-    require(be["method"] == "BE" and be["status"] == coverage["be_status"] == "completed"
+    # Early coverage receipts omit mode and keep BE status only in the sealed BE file.
+    be_status = coverage.get("be_status", be["status"] if "mode" not in coverage else None)
+    require(be["method"] == "BE" and be["status"] == be_status == "completed"
             and be["completed_prefixes"] == be["expected_prefixes"] == len(prefixes)
             and [row["prefix_id"] for row in be["prefix_records"]] == list(prefixes),
             "BE cohort mismatch")
     positions = {}
+    targets_by_prefix = {}
     edges = set()
+    classes = set(identity["class_order"])
+    text_bytes_floor = 0
     for record in be["prefix_records"]:
         prefix_id = record["prefix_id"]
+        prefix = prefixes[prefix_id]
         relevant = set(record["relevant"])
+        targets = set(record["predictions"])
+        require(targets <= classes and len(prefix["occurrence_ids"]) == len(prefix["activities"]),
+                "BE targets or prepared occurrence IDs are invalid")
+        targets_by_prefix[prefix_id] = targets
         local = {(source, target) for source in relevant for target in record["predictions"]}
         require(set(map(tuple, record["local_edges"])) == local
                 and set(map(tuple, record["merged_edges"])) == edges | local, "BE local merge mismatch")
         edges, removed = merge_prune(edges, local)
         require(record["removed"] == json.loads(json.dumps(removed))
                 and set(map(tuple, record["remaining_edges"])) == edges, "BE pruning mismatch")
-        positions[prefix_id] = [i for i, label in enumerate(prefixes[prefix_id]["activities"]) if label in relevant]
+        positions[prefix_id] = [i for i, label in enumerate(prefix["activities"]) if label in relevant]
+        occurrence_bytes = sum(len(json.dumps(value)) - 2 for value in prefix["occurrence_ids"])
+        # Prefix IDs are stored in the row and payload. The payload seal adds 64 hex digits.
+        bytes_per_context = 2 * len(prefix_id) + 64 + len(targets) * occurrence_bytes
+        text_bytes_floor += (2 << len(positions[prefix_id])) * bytes_per_context
     require(set(map(tuple, be["edges"])) == edges, "BE output edge mismatch")
     schedule = {key: {"k": len(pos), "expected": 2 << len(pos)} for key, pos in positions.items()}
     expected = sum(row["expected"] for row in schedule.values())
@@ -92,8 +119,10 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
     if be_only:
         return {"status": "verified", "scope": "BE graph and AE schedule", "prefixes": len(prefixes),
                 "be_edges": len(edges), "be_sha256": file_hash(directory / "BE.json"),
-                "ae_scheduled_contexts": expected, "ae_max_positions": max(map(len, positions.values()), default=0)}
+                "ae_scheduled_contexts": expected, "ae_max_positions": max(map(len, positions.values()), default=0),
+                "ae_context_text_bytes_floor": text_bytes_floor}
     require(coverage["status"] == "completed", "Complete AE is required")
+    require(ledger.stat().st_size >= text_bytes_floor, "AE ledger is smaller than the context text floor")
     ae = read_sealed(directory / "AE.json")
     require(ae["method"] == "AE" and ae["identity"] == identity and ae["coverage"] == coverage
             and ae["status"] == "completed", "AE output differs from coverage receipt")
@@ -101,7 +130,8 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
     with closing(sqlite3.connect(ledger.resolve().as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
         require(json.loads(db.execute("SELECT value FROM metadata WHERE key='identity'").fetchone()[0])
                 == identity, "AE ledger identity mismatch")
-        regenerated = ae_matrices(context_rows(db, prefixes, positions), identity["class_order"], sources)
+        regenerated = ae_matrices(context_rows(db, prefixes, positions, targets_by_prefix),
+                                  identity["class_order"], sources)
         require(expected == db.execute("SELECT COUNT(*) FROM contexts").fetchone()[0]
                 == ae["expected_contexts"] == regenerated["completed_contexts"]
                 == coverage["expected"] == coverage["completed"]
@@ -111,7 +141,7 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
     return {"status": "verified", "prefixes": len(prefixes), "contexts": expected,
             "be_edges": len(edges), "ae_edges": len(ae["edges"]),
             "be_sha256": file_hash(directory / "BE.json"), "ae_sha256": file_hash(directory / "AE.json"),
-            "ledger_sha256": file_hash(ledger)}
+            "ledger_sha256": file_hash(ledger), "ae_context_text_bytes_floor": text_bytes_floor}
 
 
 if __name__ == "__main__":
