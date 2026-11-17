@@ -29,6 +29,7 @@ The paper and locked Round 3.6 decisions define the baseline. The sibling author
 | BPIC13 incidents E1 | Mean tau-b .699499 over 12,498 valid results, out of 17,402 prefixes | Completed all 304,355 variants across two sessions. |
 | BPIC13-CP BE evaluation | Mean completeness F1 .777019 on 1,259 scheduled prefixes. Correctness −.093826 over 643 valid prefixes. | All nine BE outputs are available. AE and method differences remain unevaluated on this cohort. |
 | BPIC12_O predictive performance | Accuracy .819142 and weighted F1 .799364 on 7,763 prefixes | The project CLI reproduced the expected filtered dataset counts and sklearn reproduced the metrics. |
+| BPIC12_WC predictive performance | Accuracy .787733 and weighted F1 .770420 on 18,472 prefixes | Complete ordered `W_` and `COMPLETE` filters with expected counts. Sklearn reproduced the metrics. |
 | Sepsis predictive performance | Accuracy .607055 and weighted F1 .575063 on all 4,479 prefixes | The published figures are .51 and .46. The comparison does not control for historical checkpoints or protocol differences. |
 | Sepsis E3 and BE | Mean prefix TVD .157010. BE graph has 14 nodes and 16 directed edges | Complete on the local test prefix set. The graph represents model behavior. |
 | AE workload | BPIC13-CP: 809,189,178 scheduled contexts. Sepsis: approximately 9.58 × 10^52 | The locked exhaustive procedure makes full execution infeasible at measured local resources. An incomplete run does not supply a full-log AE graph or paired XAI metrics. |

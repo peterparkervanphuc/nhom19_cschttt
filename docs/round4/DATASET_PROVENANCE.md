@@ -39,4 +39,6 @@ These match the respective locked Table 1 inventory. BPIC13 lifecycle compositio
 
 The project CLI also prepared BPIC12_O from the verified archive. The audit matches the independent count, including 8,072 cases removed by the `O_` filter. Source ordinals still refer to the unfiltered XES. Baseline training and full test prediction completed on this preparation.
 
+The CLI preparation for BPIC12_WC kept 170,107 events out of 262,200 after the `W_` filter and 72,413 after the `COMPLETE` filter. The first filter removed 3,429 cases. The second removed none. All preserved records match both predicates. Baseline training and prediction completed for all 18,472 test prefixes.
+
 Seven of twelve log variants now have official raw/count evidence. Exact Helpdesk and the four synthetic logs remain unresolved. Re-checking the publisher's current [Materials availability](https://link.springer.com/article/10.1007/s44311-025-00018-4#data-availability) points to the author GitHub repository; it does not supply a newly verified separate XES/BPMN bundle. The contradictory generic data-availability sentence is retained as a paper-level observation, not used to infer missing files. Matching counts and official public versions support method-level independent experiments, not exact reproduction of historical splits or results.
