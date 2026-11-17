@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import sqlite3
+from unittest.mock import patch
 
 import pytest
 
@@ -66,3 +67,74 @@ def test_be_only_cli_keeps_ae_pending_and_resumable(trained_fixture, tmp_path, c
     completed = run_explainers(data, checkpoint, directory)
     assert completed["completed"] == status["ae_expected"]
     assert completed["status"] == "completed"
+
+
+@pytest.mark.parametrize("floor", ["disk_free_bytes", "system_available_ram_bytes"])
+def test_be_resource_pause_resumes_exact_graph(trained_fixture, tmp_path, floor):
+    data, checkpoint = trained_fixture
+    ample = {"disk_free_bytes": 10**12, "system_available_ram_bytes": 10**12}
+    scarce = {**ample, floor: 0}
+    directory = tmp_path / "partial-be"
+    with patch("nhom19_process_xai.explain.runner.resource_snapshot", side_effect=[ample, ample, scarce]):
+        paused = run_explainers(data, checkpoint, directory)
+    assert paused["be_status"] == "incomplete" and paused["be_completed_prefixes"] == 1
+    assert paused["expected"] is None and paused["pending"] is None and paused["coverage"] is None
+    assert not (directory / "BE.json").exists() and not (directory / "AE.json").exists()
+    assert not (directory / "writer.lock").exists()
+    assert len(list((directory / "be-prefixes").glob("*.json"))) == 1
+    assert read_sealed(directory / "coverage.json")["stop_reason"] == (
+        "disk_floor" if floor == "disk_free_bytes" else "available_ram_floor")
+    resumed = run_explainers(data, checkpoint, directory)
+    complete = run_explainers(data, checkpoint, tmp_path / "continuous-be")
+    assert resumed["status"] == complete["status"] == "completed"
+    for method in ("BE", "AE"):
+        left = read_sealed(directory / f"{method}.json")
+        right = read_sealed(tmp_path / "continuous-be" / f"{method}.json")
+        assert left["edges"] == right["edges"]
+        if method == "BE":
+            assert left["prefix_records"] == right["prefix_records"]
+        else:
+            assert left["matrices"] == right["matrices"]
+
+
+def test_explainer_wall_quota_keeps_be_unpublished(trained_fixture, tmp_path):
+    data, checkpoint = trained_fixture
+    paused = run_explainers(data, checkpoint, tmp_path / "wall", max_seconds=1e-20)
+    assert paused["be_status"] == "incomplete" and paused["be_completed_prefixes"] == 0
+    assert paused["stop_reason"] == "wall_time_quota"
+    assert not (tmp_path / "wall/BE.json").exists()
+
+
+@pytest.mark.parametrize("quota", [float("nan"), float("inf"), -1.])
+def test_explainer_rejects_invalid_wall_quota(tmp_path, quota):
+    with pytest.raises(ValueError, match="quota"):
+        run_explainers({}, tmp_path / "missing.pt", tmp_path / "invalid", max_seconds=quota)
+
+
+def test_ae_resource_pause_preserves_completed_be(trained_fixture, tmp_path):
+    data, checkpoint = trained_fixture
+    directory = tmp_path / "ae-resource"
+    run_explainers(data, checkpoint, directory, be_only=True)
+    original = (directory / "BE.json").read_bytes()
+    ample = {"disk_free_bytes": 10**12, "system_available_ram_bytes": 10**12}
+    with patch("nhom19_process_xai.explain.runner.resource_snapshot",
+               side_effect=[ample, {**ample, "disk_free_bytes": 0}]):
+        paused = run_explainers(data, checkpoint, directory)
+    assert paused["be_status"] == "completed" and paused["status"] == "incomplete"
+    assert paused["completed"] == 0 and paused["expected"] > 0
+    assert paused["stop_reason"] == "disk_floor"
+    assert (directory / "BE.json").read_bytes() == original
+    assert not (directory / "AE.json").exists()
+    assert run_explainers(data, checkpoint, directory)["status"] == "completed"
+
+
+def test_explainer_cli_accepts_resumable_wall_quota(trained_fixture, tmp_path, capsys):
+    _, checkpoint = trained_fixture
+    args = ["explain", "--prepared", str(tmp_path / "prepared.json"), "--checkpoint", str(checkpoint),
+            "--output", str(tmp_path / "cli-wall"), "--be-only"]
+    main([*args, "--max-seconds", "1e-20"])
+    paused = json.loads(capsys.readouterr().out)
+    assert paused["be_status"] == "incomplete" and paused["ae_expected"] is None
+    assert paused["be_completed_prefixes"] == 0 and paused["stop_reason"] == "wall_time_quota"
+    main(args)
+    assert json.loads(capsys.readouterr().out)["be_status"] == "completed"

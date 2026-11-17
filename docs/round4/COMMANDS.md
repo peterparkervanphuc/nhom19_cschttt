@@ -56,6 +56,8 @@ BPIC13-CP follows the same prepare/train/predict commands with configs/datasets/
 
 To build the full BE graph and count the exhaustive AE workload on the same prefixes, use `explain --be-only`. The command reports BE status and AE coverage separately. A subsequent `explain` with the same arguments and source version can reuse the BE results and begin AE.
 
+New explainer runs check the same 256 MiB available-RAM and 1 GiB free-disk floors as the streaming studies. Add `--max-seconds 1800` to `explain` for a finite wall-time session. Checks occur between new BE prefixes and AE contexts; one unit must fit, and preparation/checkpoint loading precedes the session timer. An unfinished BE run preserves sealed prefix records and writes `coverage.json` with `be_status=incomplete`; its AE total and coverage remain null until the relevant positions are known for every prefix. It publishes no partial `BE.json` or `AE.json`. Rerun the same command and source to resume, with an optionally different wall quota. Evaluation refuses to publish metrics while BE is incomplete. Older active runs retain their original snapshot behavior.
+
 ```powershell
 & .venv/Scripts/python.exe -m nhom19_process_xai explain --prepared data/processed/sepsis-v1.json --checkpoint artifacts/sepsis-v1/base/checkpoint.pt --output artifacts/sepsis-v1/be-only-v1 --be-only
 & .venv/Scripts/python.exe -m nhom19_process_xai graph --explanation artifacts/sepsis-v1/be-only-v1/BE.json --output artifacts/sepsis-v1/graphs/BE
