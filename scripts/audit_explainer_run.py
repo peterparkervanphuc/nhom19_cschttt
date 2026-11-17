@@ -1,4 +1,4 @@
-"""Reopen a completed BE/AE run and verify its graph and context coverage."""
+"""Verify a completed BE graph, its AE schedule, and any completed AE output."""
 
 import argparse
 from contextlib import closing
@@ -52,7 +52,7 @@ def context_rows(db, prefixes, relevant_positions):
             require(count == limit, "AE subset schedule incomplete")
 
 
-def audit(directory, prepared_path, checkpoint_path):
+def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
     ledger = directory / "ledger.sqlite"
     wal = ledger.with_suffix(".sqlite-wal")
     require(not (directory / "writer.lock").exists() and (not wal.exists() or wal.stat().st_size == 0),
@@ -61,18 +61,15 @@ def audit(directory, prepared_path, checkpoint_path):
     prefixes = {row["prefix_id"]: row for row in sorted(
         prepared["prefixes"]["test"], key=lambda row: row["prefix_id"])}
     be = read_sealed(directory / "BE.json")
-    ae = read_sealed(directory / "AE.json")
     coverage = read_sealed(directory / "coverage.json")
     identity = coverage["identity"]
-    require(be["identity"] == ae["identity"] == identity
+    require(be["identity"] == identity
             and identity["dataset"] == fingerprint(prepared)
             and identity["checkpoint"] == file_hash(checkpoint_path)
             and identity["prefix_ids"] == list(prefixes), "Explainer identity mismatch")
     del prepared
-    require(ae["method"] == "AE" and be["method"] == "BE" and ae["coverage"] == coverage
-            and be["status"] == ae["status"] == coverage["status"] == "completed",
-            "Complete BE and AE are required")
-    require(be["completed_prefixes"] == be["expected_prefixes"] == len(prefixes)
+    require(be["method"] == "BE" and be["status"] == coverage["be_status"] == "completed"
+            and be["completed_prefixes"] == be["expected_prefixes"] == len(prefixes)
             and [row["prefix_id"] for row in be["prefix_records"]] == list(prefixes),
             "BE cohort mismatch")
     positions = {}
@@ -89,8 +86,17 @@ def audit(directory, prepared_path, checkpoint_path):
         positions[prefix_id] = [i for i, label in enumerate(prefixes[prefix_id]["activities"]) if label in relevant]
     require(set(map(tuple, be["edges"])) == edges, "BE output edge mismatch")
     schedule = {key: {"k": len(pos), "expected": 2 << len(pos)} for key, pos in positions.items()}
-    require(schedule == coverage["per_prefix"], "AE per-prefix schedule mismatch")
     expected = sum(row["expected"] for row in schedule.values())
+    require(schedule == coverage["per_prefix"] and expected == coverage["expected"],
+            "AE per-prefix schedule mismatch")
+    if be_only:
+        return {"status": "verified", "scope": "BE graph and AE schedule", "prefixes": len(prefixes),
+                "be_edges": len(edges), "be_sha256": file_hash(directory / "BE.json"),
+                "ae_scheduled_contexts": expected, "ae_max_positions": max(map(len, positions.values()), default=0)}
+    require(coverage["status"] == "completed", "Complete AE is required")
+    ae = read_sealed(directory / "AE.json")
+    require(ae["method"] == "AE" and ae["identity"] == identity and ae["coverage"] == coverage
+            and ae["status"] == "completed", "AE output differs from coverage receipt")
     sources = sorted({label for prefix in prefixes.values() for label in prefix["activities"]})
     with closing(sqlite3.connect(ledger.resolve().as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
         require(json.loads(db.execute("SELECT value FROM metadata WHERE key='identity'").fetchone()[0])
@@ -113,5 +119,6 @@ if __name__ == "__main__":
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--prepared", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
+    parser.add_argument("--be-only", action="store_true", help="Audit BE and the scheduled AE workload")
     args = parser.parse_args()
-    print(json.dumps(audit(args.run, args.prepared, args.checkpoint)))
+    print(json.dumps(audit(args.run, args.prepared, args.checkpoint, be_only=args.be_only)))
