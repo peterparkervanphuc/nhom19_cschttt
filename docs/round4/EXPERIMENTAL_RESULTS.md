@@ -133,6 +133,7 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC13-CP BE | 1,574/1,574 prefixes | Global graph with 3 nodes and 5 directed edges | `bpic13-cp-v1/graphs/BE/manifest.json` |
 | BPIC13-CP AE | 1/809,189,178 contexts | Incomplete. The BE pass established the exact workload over all test prefixes | `bpic13-cp-v1/explain-v1/coverage.json` |
 | BPIC13 incidents E1 | 17,402/17,402 prefixes, 304,355 variants | Mean tau-b .699499, SD .644450, 12,498 valid and 4,904 undefined | `bpic13-i-v1/E1-stream.json` |
+| BPIC13 incidents E2-FC | 174,020/174,020 model–prefix pairs | Mean JSD across the five BASE seeds ranged .169220–.215760 and mean TVD .052379–.057158. The five FC seeds ranged .21339337–.21339381 for mean JSD and .085113–.104775 for mean TVD. | `bpic13-i-v1/E2-stream.json` |
 | BPIC13 incidents E3 | 17,402/17,402 prefixes | Mean prefix TVD .152617, SD .158701 | `bpic13-i-v1/E3-stream.json` |
 | BPIC13 incidents BE | 17,402/17,402 prefixes | Six directed edges. The independent graph audit rebuilt a schedule of 15,950,735,951,275,900,776,544,602,750,118,088,858 AE contexts with a maximum of 121 eligible positions. | `bpic13-i-v1/be-only-v1/graph-audit.json` |
 | BPIC12_O E1 | 7,763/7,763 prefixes, 67,722 variants | Mean tau-b .712442, SD .370154, 6,197 valid and 1,566 undefined | `bpic12-o-v1/E1-stream.json` |
@@ -151,6 +152,8 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 BPIC13 incidents E1 stopped after 236,445 variants at the 240-second session limit. The saved source from commit `e67565b` was used to resume. The second session added 67,910 variants in 57.25 seconds. The final ledger SHA-256, checkpoint SHA-256, per-prefix SQLite row counts and exact schedule count agree with the manifest.
 
 BPIC13 incidents E3 completed 9,915 prefixes before its first 300-second quota, then 7,487 more in 282.28 seconds. The auditor verified every sealed prefix unit and reconstructed the reported summary. BPIC12_O graph edge membership matched the GraphML export and the SVG was visually checked.
+
+BPIC13 incidents E2 completed across three sessions. A wall-time stop preserved 93,307 pairs, a RAM-floor stop added 24,251, and the final session added 56,462. The independent audit verified all ten modified checkpoints, each arm's exact test cohort, every record checksum and all aggregates and attention bins. The reported results are descriptive. See `artifacts/bpic13-i-v1/e2-record-audit.json`.
 
 The BPIC13 incidents BE export has three nodes and six directed edges, including three self-loops. All six arrowheads and the three activity labels are visible in `artifacts/graph-qa/bpic13-i-BE.png`. The GraphML, graph JSON and SVG hashes match the export receipt. The three verified BPIC12_O studies were also plotted and visually checked. The plots and exact ten-seed E2 CSV are under `artifacts/figures/bpic12-o-v1/`.
 
