@@ -140,6 +140,7 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC12_O E2-FC | 77,630/77,630 paired prefix records | Seed mean JSD .002668–.003713 for BASE and .00163521–.00163549 for FC. Seed mean prediction TVD .025136–.055303 for BASE and .026869–.039663 for FC | `bpic12-o-v1/E2-stream.json` |
 | BPIC12_O E3-PAPER | 7,763/7,763 prefixes | Mean prefix TVD .384329, SD .309039. All records passed the streamed-study audit | `bpic12-o-v1/E3-stream.json` |
 | BPIC12_WC E3-PAPER | 18,472/18,472 prefixes | Mean prefix TVD .111464, SD .179748. All records passed the streamed-study audit | `bpic12-wc-v1/E3-stream.json` |
+| BPIC12_W E3-PAPER | 47,280/47,280 prefixes | Mean prefix TVD .087629, SD .183354. The audit also verified all 774,557 masked occurrences | `bpic12-w-v1/E3-stream.json` |
 | BPIC12_WC BE | 18,472/18,472 prefixes | 13 directed edges. Run time 496.78 seconds and 115,562 model forwards | `bpic12-wc-v1/be-audit.json` |
 | BPIC12_WC AE | 0 of 56,330,420,007,228,581,540 contexts | Full BE replay verified this exact schedule. The largest prefix has 64 eligible positions. Exhaustive execution is infeasible on the available hardware. | `bpic12-wc-v1/be-only-v1/coverage.json` |
 | BPIC12_O BE | 7,763/7,763 prefixes | Global graph with 7 nodes and 12 directed edges | `bpic12-o-v1/graphs/BE/manifest.json` |
@@ -166,6 +167,8 @@ Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second
 Sepsis E2 completed in 966.89 seconds. Its ledger audit verified all ten model checkpoints, the entire cohort for every arm and seed, and the recomputed maximum-attention bins and TVD filters. Frozen-constant comparisons had lower attention JSD across all ten seed means and overlapping prediction TVD ranges with BASE. These are descriptive results for the independent models. See `artifacts/sepsis-v1/e2-record-audit.json`.
 
 BPIC12_WC E3 completed 7,185, 8,394 and 2,893 new records across three sessions. The first session stopped at the available-RAM floor and the second at its wall-time quota. The final session used the identical source snapshot and completed all remaining units. The independent ledger audit verified coverage and aggregation from the 18,472 records in `artifacts/bpic12-wc-v1/e3-record-audit.json`.
+
+BPIC12_W E3 completed 28,007, 11,186 and 8,087 prefixes across three sessions, preserving the same source, dataset and checkpoint. Total recorded run time was 3,362.57 seconds. The final audit verified all prefixes, matched each intervention to its prepared occurrence ID and recomputed every TVD from its two stored prediction vectors. The occurrence-weighted mean is .022465 and median .003584, compared with the primary equal-prefix mean of .087629. Evidence is in `artifacts/bpic12-w-v1/e3-record-audit.json`.
 
 The BPIC13-CP discrepancy was also probed against author commit `494b315a555e713bdd61f0edd7d033c31d5850bf`. `processtransformer/ml/prepare/splitter.py` lines 34–39 and 111–119 shuffle case IDs in log order and take the first floor(0.7 × N) cases for training. Applying that procedure with seed 42 to the acquired log yields the same 447 test cases as the independent sorted-ID protocol. Only 129 of those cases occur in the test XES recovered from the author archive. A separate diagnostic kept the local split, architecture, Adam settings and training seed, and used 5 epochs and batch 50. Accuracy was .559720 and weighted F1 was .517447 on all 1,574 prefixes (`artifacts/bpic13-cp-v1/source-schedule/predictions.json`). Both evaluation population and target alignment differ from the archive.
 
@@ -296,6 +299,7 @@ For E3, the archive records one TVD per masked occurrence. The independent prima
 |---|---:|---:|---:|---:|
 | Helpdesk | 12,547 | .129620 | 2,918 | .056731 |
 | BPIC12_O | 31,039 | .071677 | 6,376 | .003090 |
+| BPIC12_W | 774,557 | .003584 | 81,777 | .006551 |
 | BPIC12_WC | 143,848 | .011058 | 39,060 | .001788 |
 | BPIC13_CP | 6,243 | .055525 | 5,955 | .003920 |
 | BPIC13 incidents | 146,211 | .017057 | 41,902 | .003688 |
@@ -305,7 +309,7 @@ For E3, the archive records one TVD per masked occurrence. The independent prima
 | Long-Dist-Dep | 7,399 | .000238 | 53 | .001476 |
 | Looped-AND | 164,829 | .009520 | 52,825 | .000089 |
 
-All ten independent rows above passed occurrence-ID alignment and per-occurrence TVD recomputation, followed by exact reconstruction of the stored prefix summaries. The occurrence-weighted distributions supplement the primary equal-prefix summaries. The archived values describe different sampled cohorts and the source masking implementation.
+All eleven independent rows above passed occurrence-ID alignment and per-occurrence TVD recomputation, followed by exact reconstruction of the stored prefix summaries. The occurrence-weighted distributions supplement the primary equal-prefix summaries. The archived values describe different sampled cohorts and the source masking implementation.
 
 ### Sequence BPMN comparison
 
