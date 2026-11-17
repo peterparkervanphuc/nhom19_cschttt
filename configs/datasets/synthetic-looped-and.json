@@ -1,0 +1,16 @@
+{
+  "dataset_id": "author-supplement-looped-and",
+  "path": "../../data/raw/author-supplement/looped-and/preprocessed.xes",
+  "format": "xes",
+  "source": "https://drive.google.com/file/d/1p-mbznaXoYI0ofqlzKGPzJ1FVcAX0Pg4/view",
+  "version": "Author supplementary archive 2024-08-12, exp_023",
+  "license": "Author-linked research supplementary material; local research copy",
+  "scope": "verified_dataset",
+  "expected_sha256": "b1d9673afc938167e007f119defae97ae0f71f2a6fd306718e1adaa501c2fd99",
+  "expected_counts": {
+    "cases": 1550,
+    "events": 38016,
+    "activities": 6
+  },
+  "seed": 42
+}
