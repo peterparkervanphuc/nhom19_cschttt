@@ -1,0 +1,16 @@
+{
+  "dataset_id": "helpdesk-4tu-v1-verified-pm4py-xes",
+  "path": "../../data/raw/helpdesk-pm4py/helpdesk.xes.gz",
+  "format": "xes",
+  "source": "https://doi.org/10.4121/uuid:0c60edf1-6f83-4e75-9367-4c63b3e9d5bb",
+  "version": "4TU CSV v1, event-aligned XES at pm4py-core 9a9237d850ff25dcffd884026a7f787049c76ed5",
+  "license": "4TU General Terms of Use, August 2016; attribution and noncommercial research",
+  "scope": "verified_dataset",
+  "expected_sha256": "fb133a5b70711d523bdbb95279d6bd86d975661ad3d23d23129bfe5121cea453",
+  "expected_counts": {
+    "cases": 4580,
+    "events": 21348,
+    "activities": 14
+  },
+  "seed": 42
+}
