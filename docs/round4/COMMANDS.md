@@ -129,6 +129,14 @@ The complete Sequence log uses its verified dataset configuration and the primar
 
 For a dataset whose exhaustive AE schedule exceeds available resources, append `--be-only` and use a distinct output directory. The pipeline still runs E1–E3, evaluates BE and records the AE schedules. Its completion receipt identifies the BE-only scope, and the evaluation reports paired results as unevaluated. The default mode runs both explainers and the paired evaluation.
 
+## Synthetic BPMN comparison
+
+To compare the verified Complex-Model and Looped-AND BE outputs against selected relations in the supplement BPMNs, run the structural audit. It checks the original XES digests, the independent test split and the audited BE export before counting transitions.
+
+```powershell
+& .venv/Scripts/python.exe scripts/audit_synthetic_structure.py --archive data/raw/author-supplement/Supplementary_Material.zip --output artifacts/bpmn-complex-looped-audit.json
+```
+
 ## Archived Table 2 checkpoint replay
 
 The reference-only CPU environment is under `artifacts/author-runtime/`. Its Conda explicit package list, pip freeze, installation report and wheel digest receipt preserve the separate runtime identity. The CPython 3.7 Windows TensorFlow wheel was fetched from PyPI in bounded ranges after the original pip transfer stalled. The verified SHA-256 is `4828c436e1b26e5bb21e650c05aa33a5705af27b3a1f52bc2af6c6a1e2ae5721`. The independent Python 3.11 environment and original repository are outside this replay's execution path. [Micromamba Windows installation](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) · [TensorFlow 2.6.5 files](https://pypi.org/project/tensorflow/2.6.5/#files)
