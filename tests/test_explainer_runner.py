@@ -181,3 +181,30 @@ def test_be_cache_is_durable_before_prefix_publication(trained_fixture, tmp_path
     monkeypatch.setattr(runner, "write_json", checked_write)
     run_explainers(data, checkpoint, tmp_path / "publication", be_only=True)
     assert set(checked) == prefixes.keys()
+
+
+def test_baseline_cache_policy_preserves_all_graphs_and_votes(trained_fixture, tmp_path):
+    data, checkpoint = trained_fixture
+    full = tmp_path / "all-cache"
+    baseline = tmp_path / "baseline-cache"
+    left = run_explainers(data, checkpoint, full)
+    right = run_explainers(data, checkpoint, baseline, cache_policy="baseline")
+    assert left["status"] == right["status"] == "completed"
+    assert left["expected"] == right["expected"] == right["completed"]
+    assert right["cache_entries"] < left["cache_entries"]
+    for method in ("BE", "AE"):
+        a, b = read_sealed(full / f"{method}.json"), read_sealed(baseline / f"{method}.json")
+        assert a["edges"] == b["edges"]
+        for field in (["prefix_records"] if method == "BE" else ["matrices", "retained_votes"]):
+            assert a[field] == b[field]
+    with sqlite3.connect(baseline / "ledger.sqlite") as db:
+        import io
+        import numpy as np
+        for (payload,) in db.execute("SELECT payload FROM inference"):
+            with np.load(io.BytesIO(payload), allow_pickle=False) as arrays:
+                assert arrays["valid"].all()
+
+
+def test_invalid_cache_policy_rejected_before_loading(tmp_path):
+    with pytest.raises(ValueError, match="cache policy"):
+        run_explainers({}, tmp_path / "missing.pt", tmp_path / "invalid", cache_policy="unknown")

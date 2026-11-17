@@ -51,6 +51,8 @@ def main(argv=None):
                                         help="Export the BE result and count the AE workload without running AE")
             command_parser.add_argument("--max-seconds", type=float,
                                         help="Pause between BE prefixes or AE contexts; resume with the same output")
+            command_parser.add_argument("--cache-policy", choices=["all", "baseline"], default="all",
+                                        help="Persist all predictions or only unmasked baseline tensors")
         if command == "evaluate":
             command_parser.add_argument("--be-only", action="store_true", help="Evaluate BE without running AE")
             command_parser.add_argument("--baseline-be", type=Path, help="Reuse a verified BE graph with --be-only")
@@ -106,7 +108,7 @@ def main(argv=None):
         print(json.dumps({"status": result["status"], "epochs": result["completed_epochs"]}))
     elif args.command == "explain":
         result = run_explainers(read_sealed(args.prepared), args.checkpoint, args.output,
-                                be_only=args.be_only, max_seconds=args.max_seconds)
+                                be_only=args.be_only, max_seconds=args.max_seconds, cache_policy=args.cache_policy)
         print(json.dumps({"be_status": result["be_status"], "ae_status": result["status"],
                           "be_completed_prefixes": result["be_completed_prefixes"],
                           "be_expected_prefixes": result["be_expected_prefixes"],
