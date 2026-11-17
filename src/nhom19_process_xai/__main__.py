@@ -67,6 +67,8 @@ def main(argv=None):
     pipeline_parser.add_argument("--training-config", type=Path, required=True)
     pipeline_parser.add_argument("--output", type=Path, required=True)
     pipeline_parser.add_argument("--streaming", action="store_true", help="Run E1–E3 with resumable SQLite ledgers")
+    pipeline_parser.add_argument("--be-only", action="store_true",
+                                 help="Evaluate BE and report the AE schedule without running AE")
     pipeline_parser.add_argument("--study-max-seconds", type=float,
                                  help="Wall time quota per streaming study session (default: 3600)")
     args = parser.parse_args(argv)
@@ -76,9 +78,11 @@ def main(argv=None):
             parser.error("--study-max-seconds requires --streaming")
         result = run_pipeline(args.dataset_config, args.training_config, args.output,
                               streaming=args.streaming,
-                              study_max_seconds=3600 if args.study_max_seconds is None else args.study_max_seconds)
+                              study_max_seconds=3600 if args.study_max_seconds is None else args.study_max_seconds,
+                              be_only=args.be_only)
         print(json.dumps({"status": result["status"], "stages": len(result["completed"]),
-                          "active_stage": result["active_stage"]}))
+                          "active_stage": result["active_stage"],
+                          "evaluation_mode": result["identity"].get("evaluation_mode", "paired")}))
     elif args.command == "pilot":
         from .pilot import run_pilot
         result = run_pilot(read_sealed(args.prepared), args.checkpoint, args.output,
