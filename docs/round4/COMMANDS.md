@@ -68,6 +68,13 @@ BE can be evaluated independently where the exhaustive AE schedule cannot comple
 & .venv/Scripts/python.exe -m nhom19_process_xai evaluate --prepared data/processed/bpic13-cp-v1.json --checkpoint artifacts/bpic13-cp-v1/base/checkpoint.pt --be-only --baseline-be artifacts/bpic13-cp-v1/explain-v1/BE.json --output artifacts/bpic13-cp-v1/evaluation-be
 ```
 
+Audit a completed evaluation against its candidate checkpoints, graph digests and deterministic cohort. The auditor recomputes the model distances and the nine summaries from recorded per-prefix values. For paired results it also reconstructs each valid intersection and its descriptive differences. Pass `--baseline-be` if the BE-only run reused a standalone baseline graph.
+
+```powershell
+& .venv/Scripts/python.exe scripts/audit_xai_evaluation.py --run artifacts/bpic12-o-v1/evaluation-be --prepared data/processed/bpic12-o-v1.json --checkpoint artifacts/bpic12-o-v1/base/checkpoint.pt --baseline-be artifacts/bpic12-o-v1/be-only-v1/BE.json
+& .venv/Scripts/python.exe scripts/audit_xai_evaluation.py --run artifacts/synthetic-long-dist-dep/evaluation-paired --prepared data/processed/synthetic-long-dist-dep.json --checkpoint artifacts/synthetic-long-dist-dep/base/checkpoint.pt
+```
+
 Reopen a completed streaming run using the command below. It checks the dataset and checkpoint, the complete test cohort, the SQLite digest and each record seal, and reconstructs the summaries. For E1, pass the exact count artifact from `scripts/count_e1_variants.py`. E2 and E3 do not need `--workload`. The E2 receipt also recomputes the raw and L1-normalized maximum-attention bins and the TVD filter on each record, reporting counts separately by arm.
 
 ```powershell
