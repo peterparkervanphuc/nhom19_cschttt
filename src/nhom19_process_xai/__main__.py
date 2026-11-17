@@ -44,6 +44,9 @@ def main(argv=None):
         command_parser.add_argument("--prepared", type=Path, required=True)
         command_parser.add_argument("--checkpoint", type=Path, required=True)
         command_parser.add_argument("--output", type=Path, required=True)
+        if command == "explain":
+            command_parser.add_argument("--be-only", action="store_true",
+                                        help="Export the BE result and count the AE workload without running AE")
     graph_parser = subcommands.add_parser("graph")
     graph_parser.add_argument("--explanation", type=Path, required=True)
     graph_parser.add_argument("--output", type=Path, required=True)
@@ -83,8 +86,11 @@ def main(argv=None):
         result = train(read_sealed(args.prepared), args.output, TrainingConfig(**config), args.resume)
         print(json.dumps({"status": result["status"], "epochs": result["completed_epochs"]}))
     elif args.command == "explain":
-        result = run_explainers(read_sealed(args.prepared), args.checkpoint, args.output)
-        print(json.dumps({"status": result["status"], "coverage": result["coverage"]}))
+        result = run_explainers(read_sealed(args.prepared), args.checkpoint, args.output,
+                                be_only=args.be_only)
+        print(json.dumps({"be_status": result["be_status"], "ae_status": result["status"],
+                          "ae_expected": result["expected"], "ae_completed": result["completed"],
+                          "coverage": result["coverage"]}))
     elif args.command == "evaluate":
         result = run_evaluation(read_sealed(args.prepared), args.checkpoint, args.output)
         print(json.dumps({"status": result["status"], "selected_seed": result["selected"]["seed"]}))

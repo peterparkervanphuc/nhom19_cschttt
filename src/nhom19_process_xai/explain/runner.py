@@ -55,7 +55,9 @@ class CachedPredictor:
 
 
 def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
-                   stop_after_contexts: int | None = None) -> dict:
+                   stop_after_contexts: int | None = None, *, be_only: bool = False) -> dict:
+    if be_only and stop_after_contexts is not None:
+        raise ValueError("A BE-only run cannot set an AE context quota")
     if stop_after_contexts is not None and stop_after_contexts < 1:
         raise ValueError("Context stop must be positive")
     predictor = Predictor(checkpoint, prepared)
@@ -113,7 +115,7 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
             return connection.execute("SELECT 1 FROM contexts WHERE prefix_id=? AND scenario=? AND subset=?",
                                       (prefix_id, scenario, subset)).fetchone() is not None
         added = 0
-        for prefix in prefixes:
+        for prefix in (() if be_only else prefixes):
             for context in ae_contexts(cached, prefix, relevance_by_id[prefix["prefix_id"]], is_completed):
                 connection.execute("INSERT INTO contexts VALUES (?,?,?,?)",
                                     (context["prefix_id"], context["scenario"], context["subset"],
@@ -127,13 +129,14 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
         completed = connection.execute("SELECT COUNT(*) FROM contexts").fetchone()[0]
         status = "completed" if completed == expected else "incomplete"
         coverage = {"identity": identity, "status": status, "expected": expected, "completed": completed,
+                    "be_status": be["status"], "mode": "be-only" if be_only else "be-and-ae",
                     "pending": expected - completed, "coverage": completed / expected if expected else None,
                     "per_prefix": expected_by_prefix, "cache_hits_this_session": cached.hits,
                     "forward_executions_this_session": cached.executions,
                     "cache_entries": connection.execute("SELECT COUNT(*) FROM inference").fetchone()[0],
                     "wall_seconds_this_session": time.perf_counter() - started,
                     "cpu_seconds_this_session": time.process_time() - cpu_started}
-        if status == "completed":
+        if status == "completed" and not be_only:
             def records():
                 for prefix in prefixes:
                     for scenario in ("most", "few"):

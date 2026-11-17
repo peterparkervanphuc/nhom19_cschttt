@@ -36,3 +36,10 @@ BPIC13-CP follows the same prepare/train/predict commands with configs/datasets/
 ```powershell
 & .venv/Scripts/python.exe scripts/render_round4_results.py --e1 artifacts/bpic13-cp-v1/E1.json --e2 artifacts/bpic13-cp-v1/E2-stream.json --e3 artifacts/bpic13-cp-v1/E3-stream.json --output artifacts/figures/bpic13-cp-v2
 ```
+
+To build the full BE graph and count the exhaustive AE workload on the same prefixes, use `explain --be-only`. The command reports BE status and AE coverage separately. A subsequent `explain` with the same arguments and source version can reuse the BE results and begin AE.
+
+```powershell
+& .venv/Scripts/python.exe -m nhom19_process_xai explain --prepared data/processed/sepsis-v1.json --checkpoint artifacts/sepsis-v1/base/checkpoint.pt --output artifacts/sepsis-v1/be-only-v1 --be-only
+& .venv/Scripts/python.exe -m nhom19_process_xai graph --explanation artifacts/sepsis-v1/be-only-v1/BE.json --output artifacts/sepsis-v1/graphs/BE
+```

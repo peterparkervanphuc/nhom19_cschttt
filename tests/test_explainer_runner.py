@@ -4,6 +4,7 @@ import sqlite3
 
 import pytest
 
+from nhom19_process_xai.__main__ import main
 from nhom19_process_xai.artifacts import read_sealed
 from nhom19_process_xai.data.preparation import prepare_file
 from nhom19_process_xai.explain.runner import run_explainers
@@ -50,3 +51,18 @@ def test_identity_mismatch_rejected(trained_fixture, tmp_path):
         db.execute("UPDATE metadata SET value='{}' WHERE key='identity'")
     with pytest.raises(ValueError, match="identity"):
         run_explainers(data, checkpoint, directory)
+
+
+def test_be_only_cli_keeps_ae_pending_and_resumable(trained_fixture, tmp_path, capsys):
+    data, checkpoint = trained_fixture
+    directory = tmp_path / "be-only"
+    main(["explain", "--prepared", str(tmp_path / "prepared.json"),
+          "--checkpoint", str(checkpoint), "--output", str(directory), "--be-only"])
+    status = json.loads(capsys.readouterr().out)
+    assert status["be_status"] == "completed"
+    assert status["ae_status"] == "incomplete"
+    assert status["ae_expected"] > 0 and status["ae_completed"] == 0
+    assert (directory / "BE.json").exists() and not (directory / "AE.json").exists()
+    completed = run_explainers(data, checkpoint, directory)
+    assert completed["completed"] == status["ae_expected"]
+    assert completed["status"] == "completed"
