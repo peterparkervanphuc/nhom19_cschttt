@@ -10,7 +10,7 @@ The independent loader counted 1,050 cases, 15,214 events, 16 activities and max
 
 The dataset's August2016 terms permit noncommercial reuse with source acknowledgement and impose citation/publication-notification and attribution conditions for publication or redistribution. The local work is academic research. Cite the creator and DOI in results using this log, and carry the publication/redistribution requirements into the final report handoff. This turn performs no external publication or notification. The public README describes anonymized attributes and shifted timestamps, with within-case timing retained. [Applicable terms](https://doi.org/10.4121/resource:terms_of_use)
 
-Preparation config is configs/datasets/sepsis.json. Split seed42 is an independent design choice, with actual IDs and hash emitted by prepare. Dataset outputs and model results remain local under ignored data/ and artifacts/. Helpdesk candidate and synthetic historical-provenance issues from Round3.6 remain open.
+Preparation config is configs/datasets/sepsis.json. Split seed42 is an independent design choice, with actual IDs and hash emitted by prepare. Dataset outputs and model results remain local under ignored data/ and artifacts/.
 
 ## BPIC12 and BPIC13 · acquired 2026-11-17
 
@@ -49,4 +49,19 @@ The CSV has timezone-free timestamps and two headers named Variant. The project 
 
 The verified configs/datasets/helpdesk.json selects the event-equivalent XES encoding. CLI preparation reproduced the expected counts without filtering. Training uses the independent split and retains raw data locally. The paper's precise historical XES bytes, split and checkpoint are still unverified.
 
-Eight of twelve log variants now have official raw/count evidence or event-level provenance against an official release. The four synthetic logs remain unresolved. The publisher's [Materials availability](https://link.springer.com/article/10.1007/s44311-025-00018-4#data-availability) points to the author repository without identifying a separate verified XES/BPMN bundle.
+## Author supplementary archive · acquired 2026-11-17
+
+The pinned author README links to a Google Drive folder containing `Supplementary_Material.zip`. The downloaded ZIP is 148,506,909 bytes and has SHA-256 `b1b88b2d7797fbe3369dccc5c4fe8d9a96af5d52293954279d4bab2f0bcc169e`. The inventory contains 4,512 entries, including 253 XES and 25 BPMN files, saved models and result files. The ZIP and extracted inputs remain local under ignored `data/raw/author-supplement/`. Acquisition establishes access to the author-linked material for this audit. Redistribution rights for the bundle have not been established. [Pinned README](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/README.md#L10) · [Author archive](https://drive.google.com/file/d/1p-mbznaXoYI0ofqlzKGPzJ1FVcAX0Pg4/view)
+
+For each Table 1 synthetic log, the `preprocessed.xes`, `train.xes`, `test.xes`, experiment JSON and reference BPMN were extracted by exact member name. The root for the following paths is `Supplementary_Material/Synthetic_Event_Logs/generated_event_logs/`. Cases, events and activity counts match Table 1. Both split files together match the preprocessed case IDs and their activity sequences, with no overlap between train and test.
+
+| Log | Event log directory | Reference BPMN in parent directory | Cases / events / activities | Distinct activity sequences | Archive train / test | Test cases shared with independent split |
+|---|---|---|---|---:|---|---:|
+| Sequence | `02_sequence/exp_018` | `longer_sequence.bpmn` | 1,000 / 12,000 / 12 | 1 | 700 / 300 | 100 |
+| Long-Dist-Dep | `11_long_running_dependency2/exp_015` | `long_running_dependency2.bpmn` | 1,000 / 7,514 / 10 | 4 | 700 / 300 | 95 |
+| Complex-Model | `14_complex_models/complex_model_001/exp_022` | `complex_model_001.bpmn` | 5,000 / 76,535 / 15 | 4,192 | 3,500 / 1,500 | 446 |
+| Looped-AND | `15_looped_AND/exp_023` | `looped_AND.bpmn` | 1,550 / 38,016 / 6 | 1,550 | 1,085 / 465 | 123 |
+
+Local `inventory.json` and `synthetic-receipt.json` record retrieval, exact paths, member sizes and hashes. Configs `configs/datasets/synthetic-*.json` pin the hashes and expected counts of the four preprocessed XES files. All four archived test memberships match the author's random split with seed 789 on each preprocessed log's source trace order. The independent configs retain the locked seed 42 and sorted case order. All twelve Table 1 log inputs now have provenance and count evidence.
+
+The archived BPIC13 closed-problems test file shares 129 of 447 test cases with the independent split. Taking every event after the first event of its case as a next-activity target yields 1,486 targets: 800 Accepted, 465 Completed, 216 Queued and 5 Unmatched. The independent run has 1,574 held-out targets, with respective counts 839, 477, 255 and 3. The pinned splitter applied with seed 42 to the acquired public XES produces the same membership as the independent split for this log. The archived test file establishes a different actual membership.
