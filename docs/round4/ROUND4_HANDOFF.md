@@ -46,7 +46,7 @@ The independent environment is `.venv`, uv CPython 3.11.15 with PyTorch 2.6.0+cp
 
 Set `PYTHONPATH` to the snapshot's `src` directory and restore it after the command, as shown in [Commands](COMMANDS.md). Check actual processes and writer locks before resuming. Completed outputs refuse overwrite. Keep active jobs and all atomic epoch/prefix checkpoints intact; the deadline does not turn an incomplete run into a complete one.
 
-The full BPIC12 BE prefix records already prove an AE lower bound of at least 1.75755 × 10^39 contexts from a fixed 43,804-prefix snapshot. This is a lower bound, not a completed graph or exact full AE total. Other documented bounds include approximately 2.178 × 10^40 for BPIC12_W and 9.578 × 10^52 for Sepsis. Adding ordinary local hardware cannot complete those exhaustive schedules. An author-style cap would be a separately declared protocol, not silent fulfillment of the exhaustive primary method.
+The completed full BPIC12 BE audit now establishes the exact AE schedule: 10,702,726,289,412,151,069,607,326,686,972,248,928,176 contexts, maximum k=131. This supersedes the earlier partial-cohort lower bound. Other documented counts include approximately 2.178 × 10^40 for BPIC12_W and 9.578 × 10^52 for Sepsis. Adding ordinary local hardware cannot complete those exhaustive schedules. An author-style cap would be a separately declared protocol, not silent fulfillment of the exhaustive primary method.
 
 ## Closing assessment
 

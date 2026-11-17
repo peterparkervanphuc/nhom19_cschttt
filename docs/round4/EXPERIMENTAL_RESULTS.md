@@ -2,6 +2,8 @@
 
 **Reproduction gate: PARTIALLY COMPLETE.** See [the actual E1–E3 comparison](REPRODUCTION_COMPARISON.md). Software verification does not close missing experimental or historical-protocol requirements.
 
+All twelve full-log BE graphs have now passed independent cohort, relevance and merge/pruning audits. Full BPIC12 contains 53 directed edges over all 73,742 test prefixes. Its sealed graph SHA-256 is `53c9dd963f034f6c14de2c5bbdadb08e5aa93c73488198736c58627be7e57546`; `artifacts/bpic12-v1/be-audit.json` verifies the complete graph and the exact approximately 1.07027 × 10^40-context AE schedule. Zero AE contexts were executed on this log, so no full-log AE metric is inferred.
+
 Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. All twelve independent predictive baselines have been trained and verified. Full twelve-log experimental coverage remains incomplete. The primary schedule and diagnostic profiles are defined in Round 3 and Round 3.6. Every result below retains its own dataset, split, source and checkpoint identity.
 
 The strengthened XAI audit reconstructed the nine per-prefix metrics from stored intermediates on BPIC13-CP and BPIC12_O BE-only evaluations, the Helpdesk, Sequence and Long-Dist-Dep paired evaluations, and the integrated Sequence repeat: 29,131 method records in total, including the repeat. It also checked projections against the saved global graphs and candidate Jaccard overlaps. Independent pair counting reproduced Kendall tau-b with ties and undefined cases preserved. The six `evaluation-derivation-audit.json` receipts retain the auditor hash. This verifies recorded metric arithmetic and graph alignment; it does not replay each model inference.
