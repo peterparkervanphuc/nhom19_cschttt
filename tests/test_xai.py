@@ -1,0 +1,72 @@
+import json
+from pathlib import Path
+
+import numpy as np
+import pytest
+import torch
+
+from nhom19_process_xai.artifacts import read_sealed
+from nhom19_process_xai.data.preparation import prepare_file
+from nhom19_process_xai.evaluate.xai import METRICS, evaluate_prefix, paired_method_differences, run_evaluation, sample_prefixes, weight_distance
+from nhom19_process_xai.model.predictor import Prediction
+from nhom19_process_xai.model.training import TrainingConfig, train
+
+
+def test_six_properties_hand_fixture():
+    prediction = Prediction(np.array([.8, .2]), np.ones((1, 2, 2))/2,
+                            np.ones((1, 2, 2))/2, np.array([True, True]), "baseline", ("X", "Y"))
+    prefix = {"prefix_id": "p", "case_id": "c", "activities": ["A", "B"]}
+    features = {"universe": ["A", "B"], "common": [.7, .3], "variants": [
+        {"variant_id": "v1", "activities": [None, "B"], "original_activity": "A", "cosine_similarity": .8},
+        {"variant_id": "v2", "activities": [], "original_activity": "B", "cosine_similarity": .6}]}
+    record = evaluate_prefix(prefix, prediction, features, {("A", "X"), ("B", "Y")},
+                              prediction, features, {("A", "X")})
+    assert record["values"] == pytest.approx({"correctness": -1., "completeness_precision": 1.,
+                                 "completeness_recall": 1., "completeness_f1": 1.,
+                                 "consistency": .5, "continuity": .7, "contrastivity": .4,
+                                 "compactness_rules": 2, "compactness_rhs": 1.}, abs=1e-12, rel=0)
+    assert record["variant_records"][0]["cohort"] == "near"
+
+
+def test_raw_weight_distance_and_sample():
+    baseline, candidate = torch.nn.Linear(2, 1, bias=False), torch.nn.Linear(2, 1, bias=False)
+    with torch.no_grad():
+        baseline.weight.copy_(torch.tensor([[-1., 0.]]))
+        candidate.weight.copy_(torch.tensor([[1., 1.]]))
+    assert weight_distance(baseline, candidate) == 1.5
+    rows = [{"prefix_id": str(i)} for i in range(10)]
+    assert len(sample_prefixes(rows)) == 8
+    assert sample_prefixes(rows) == sample_prefixes(list(reversed(rows)))
+    assert sample_prefixes([]) == []
+
+
+def test_comparison_uses_valid_paired_intersection():
+    def row(identifier, value):
+        return {"prefix_id": identifier, "values": dict.fromkeys(METRICS, value)}
+    methods = {"BE": {"records": [row("a", .2), row("b", None), row("c", .9)]},
+               "AE": {"records": [row("c", None), row("b", .8), row("a", .5)]}}
+    result = paired_method_differences(methods)["correctness"]
+    assert result["paired_valid"] == 1
+    assert result["excluded_unpaired_null"] == 2
+    assert result["difference"]["mean"] == pytest.approx(.3)
+    assert result["difference"]["sd"] is None
+    assert result["BE_on_intersection"]["mean"] == .2
+    methods["AE"]["records"].pop()
+    with pytest.raises(ValueError, match="shared"):
+        paired_method_differences(methods)
+
+
+def test_co03_and_all_xai_outputs(tmp_path):
+    config_path = Path(__file__).parents[1] / "configs/fixture/dataset.json"
+    prepare_file(json.loads(config_path.read_text()), config_path.parent, tmp_path / "prepared.json")
+    data = read_sealed(tmp_path / "prepared.json")
+    train(data, tmp_path / "base", TrainingConfig(epochs=1))
+    result = run_evaluation(data, tmp_path / "base/checkpoint.pt", tmp_path / "eval")
+    assert result["status"] == "completed"
+    assert len(result["candidates"]) == 5
+    assert result["selected"] == min(result["candidates"], key=lambda row: (-row["distance"], row["seed"]))
+    assert len(result["sample_ids"]) == 2
+    for method in ["BE", "AE"]:
+        assert set(result["methods"][method]["summary"]) == set(METRICS)
+        assert all(row["n_total"] == 2 for row in result["methods"][method]["summary"].values())
+    assert read_sealed(tmp_path / "eval/evaluation.json")["status"] == "completed"
