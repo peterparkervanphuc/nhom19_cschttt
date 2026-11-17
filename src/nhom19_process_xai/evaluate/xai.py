@@ -194,6 +194,8 @@ def _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be):
     graph_runs = {}
     for model_path, folder in graph_jobs:
         status = run_explainers(prepared, model_path, directory / folder, be_only=be_only)
+        if status["be_status"] != "completed":
+            raise RuntimeError("BE graph paused at a resource floor; resume the same evaluation command")
         graph_runs[folder] = {"ae_status": status["status"], "ae_expected": status["expected"],
                               "ae_completed": status["completed"]}
         if not be_only and status["status"] != "completed":

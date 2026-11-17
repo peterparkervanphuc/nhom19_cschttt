@@ -49,6 +49,8 @@ def main(argv=None):
         if command == "explain":
             command_parser.add_argument("--be-only", action="store_true",
                                         help="Export the BE result and count the AE workload without running AE")
+            command_parser.add_argument("--max-seconds", type=float,
+                                        help="Pause between BE prefixes or AE contexts; resume with the same output")
         if command == "evaluate":
             command_parser.add_argument("--be-only", action="store_true", help="Evaluate BE without running AE")
             command_parser.add_argument("--baseline-be", type=Path, help="Reuse a verified BE graph with --be-only")
@@ -104,8 +106,11 @@ def main(argv=None):
         print(json.dumps({"status": result["status"], "epochs": result["completed_epochs"]}))
     elif args.command == "explain":
         result = run_explainers(read_sealed(args.prepared), args.checkpoint, args.output,
-                                be_only=args.be_only)
+                                be_only=args.be_only, max_seconds=args.max_seconds)
         print(json.dumps({"be_status": result["be_status"], "ae_status": result["status"],
+                          "be_completed_prefixes": result["be_completed_prefixes"],
+                          "be_expected_prefixes": result["be_expected_prefixes"],
+                          "stop_reason": result["stop_reason"],
                           "ae_expected": result["expected"], "ae_completed": result["completed"],
                           "coverage": result["coverage"]}))
     elif args.command == "evaluate":

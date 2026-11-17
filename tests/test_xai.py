@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -87,3 +88,20 @@ def test_co03_and_all_xai_outputs(tmp_path):
         run_evaluation(data, tmp_path / "base/checkpoint.pt", tmp_path / "wrong",
                        be_only=True, baseline_be=tmp_path / "be/candidate-graphs/BE.json")
     assert not (tmp_path / "wrong/candidates").exists()
+
+
+def test_be_resource_pause_prevents_evaluation_publication(tmp_path):
+    config_path = Path(__file__).parents[1] / "configs/fixture/dataset.json"
+    prepare_file(json.loads(config_path.read_text()), config_path.parent, tmp_path / "prepared.json")
+    data = read_sealed(tmp_path / "prepared.json")
+    checkpoint = tmp_path / "base/checkpoint.pt"
+    train(data, checkpoint.parent, TrainingConfig(epochs=1))
+    directory = tmp_path / "paused-eval"
+    with patch("nhom19_process_xai.explain.runner.resource_snapshot",
+               return_value={"disk_free_bytes": 0, "system_available_ram_bytes": 10**12}):
+        with pytest.raises(RuntimeError, match="BE graph paused"):
+            run_evaluation(data, checkpoint, directory, be_only=True)
+    assert not (directory / "evaluation.json").exists()
+    assert read_sealed(directory / "baseline-graphs/coverage.json")["be_status"] == "incomplete"
+    assert not (directory / "candidate-graphs").exists()
+    assert run_evaluation(data, checkpoint, directory, be_only=True)["status"] == "completed"

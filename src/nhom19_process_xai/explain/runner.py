@@ -3,6 +3,7 @@
 from contextlib import closing
 import io
 import json
+import math
 from pathlib import Path
 import sqlite3
 import time
@@ -14,6 +15,7 @@ from ..data.pipeline import fingerprint
 from ..graphs.relations import merge_prune
 from ..model.predictor import Prediction, Predictor
 from ..model.training import run_lock, source_hash
+from ..resources import resource_snapshot
 from .algorithms import ae_contexts, ae_matrices, relevant_activities
 
 
@@ -55,11 +57,14 @@ class CachedPredictor:
 
 
 def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
-                   stop_after_contexts: int | None = None, *, be_only: bool = False) -> dict:
+                   stop_after_contexts: int | None = None, *, be_only: bool = False,
+                   max_seconds: float | None = None) -> dict:
     if be_only and stop_after_contexts is not None:
         raise ValueError("A BE-only run cannot set an AE context quota")
     if stop_after_contexts is not None and stop_after_contexts < 1:
         raise ValueError("Context stop must be positive")
+    if max_seconds is not None and (not math.isfinite(max_seconds) or max_seconds <= 0):
+        raise ValueError("Explainer wall time quota must be finite and positive")
     predictor = Predictor(checkpoint, prepared)
     prefixes = sorted(prepared["prefixes"]["test"], key=lambda prefix: prefix["prefix_id"])
     identity = {"checkpoint": predictor.checkpoint_id, "dataset": fingerprint(prepared),
@@ -79,6 +84,21 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
         cached = CachedPredictor(predictor, connection)
         started = time.perf_counter()
         cpu_started = time.process_time()
+        before = resource_snapshot(directory)
+        observed = before
+
+        def quota():
+            nonlocal observed
+            if max_seconds is not None and time.perf_counter() - started >= max_seconds:
+                return "wall_time_quota"
+            observed = resource_snapshot(directory)
+            if observed["disk_free_bytes"] < 1024**3:
+                return "disk_floor"
+            available = observed["system_available_ram_bytes"]
+            if available is not None and available < 256 * 1024**2:
+                return "available_ram_floor"
+            return None
+
         be_path = directory / "BE.json"
         if be_path.exists():
             be = read_sealed(be_path)
@@ -93,6 +113,18 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
                 if record_path.exists():
                     relevance = read_sealed(record_path)
                 else:
+                    stop = quota()
+                    if stop:
+                        coverage = {"identity": identity, "status": "incomplete", "be_status": "incomplete",
+                                    "mode": "be-only" if be_only else "be-and-ae",
+                                    "be_expected_prefixes": len(prefixes), "be_completed_prefixes": len(records),
+                                    "expected": None, "completed": 0, "pending": None, "coverage": None,
+                                    "stop_reason": stop, "max_seconds": max_seconds,
+                                    "before": before, "resource_at_last_check": observed,
+                                    "wall_seconds_this_session": time.perf_counter() - started,
+                                    "cpu_seconds_this_session": time.process_time() - cpu_started}
+                        write_json(directory / "coverage.json", seal(coverage))
+                        return coverage
                     relevance = relevant_activities(cached, prefix)
                     write_json(record_path, seal(relevance))
                 local = {(source, target) for source in relevance["relevant"] for target in relevance["predictions"]}
@@ -115,8 +147,17 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
             return connection.execute("SELECT 1 FROM contexts WHERE prefix_id=? AND scenario=? AND subset=?",
                                       (prefix_id, scenario, subset)).fetchone() is not None
         added = 0
+        stop = None
         for prefix in (() if be_only else prefixes):
-            for context in ae_contexts(cached, prefix, relevance_by_id[prefix["prefix_id"]], is_completed):
+            contexts = iter(ae_contexts(cached, prefix, relevance_by_id[prefix["prefix_id"]], is_completed))
+            while True:
+                stop = quota()
+                if stop:
+                    break
+                try:
+                    context = next(contexts)
+                except StopIteration:
+                    break
                 connection.execute("INSERT INTO contexts VALUES (?,?,?,?)",
                                     (context["prefix_id"], context["scenario"], context["subset"],
                                      json.dumps(seal(context), allow_nan=False)))
@@ -124,12 +165,15 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
                 added += 1
                 if stop_after_contexts is not None and added >= stop_after_contexts:
                     break
-            if stop_after_contexts is not None and added >= stop_after_contexts:
+            if stop or stop_after_contexts is not None and added >= stop_after_contexts:
                 break
         completed = connection.execute("SELECT COUNT(*) FROM contexts").fetchone()[0]
         status = "completed" if completed == expected else "incomplete"
         coverage = {"identity": identity, "status": status, "expected": expected, "completed": completed,
                     "be_status": be["status"], "mode": "be-only" if be_only else "be-and-ae",
+                    "be_expected_prefixes": len(prefixes), "be_completed_prefixes": len(be["prefix_records"]),
+                    "stop_reason": stop, "max_seconds": max_seconds,
+                    "before": before, "resource_at_last_check": observed,
                     "pending": expected - completed, "coverage": completed / expected if expected else None,
                     "per_prefix": expected_by_prefix, "cache_hits_this_session": cached.hits,
                     "forward_executions_this_session": cached.executions,
