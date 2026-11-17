@@ -10,6 +10,7 @@ from nhom19_process_xai.data.preparation import prepare_file
 from nhom19_process_xai.evaluate.xai import METRICS, evaluate_prefix, paired_method_differences, run_evaluation, sample_prefixes, weight_distance
 from nhom19_process_xai.model.predictor import Prediction
 from nhom19_process_xai.model.training import TrainingConfig, train
+from scripts.audit_xai_evaluation import audit
 
 
 def test_six_properties_hand_fixture():
@@ -70,6 +71,8 @@ def test_co03_and_all_xai_outputs(tmp_path):
         assert set(result["methods"][method]["summary"]) == set(METRICS)
         assert all(row["n_total"] == 2 for row in result["methods"][method]["summary"].values())
     assert read_sealed(tmp_path / "eval/evaluation.json")["status"] == "completed"
+    checked = audit(tmp_path / "eval", tmp_path / "prepared.json", tmp_path / "base/checkpoint.pt", None)
+    assert checked["status"] == "verified" and checked["verified_method_records"] == 4
     original = tmp_path / "eval/baseline-graphs/BE.json"
     be_result = run_evaluation(data, tmp_path / "base/checkpoint.pt", tmp_path / "be",
                                be_only=True, baseline_be=original)
@@ -78,6 +81,8 @@ def test_co03_and_all_xai_outputs(tmp_path):
     assert be_result["paired_AE_minus_BE"] is None
     assert be_result["graph_runs"]["candidate-graphs"]["ae_completed"] == 0
     assert not (tmp_path / "be/candidate-graphs/AE.json").exists()
+    checked = audit(tmp_path / "be", tmp_path / "prepared.json", tmp_path / "base/checkpoint.pt", original)
+    assert checked["status"] == "verified" and checked["verified_method_records"] == 2
     with pytest.raises(ValueError, match="Graph identity or coverage mismatch"):
         run_evaluation(data, tmp_path / "base/checkpoint.pt", tmp_path / "wrong",
                        be_only=True, baseline_be=tmp_path / "be/candidate-graphs/BE.json")
