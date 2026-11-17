@@ -31,6 +31,23 @@ All paths above already hold results; use a new run name for a new execution. Th
 
 The original E3 code snapshot is preserved under artifacts/source-snapshots/6adfd3e3f7f2e36238b4316e8839d42953fc2d074753fea953ff4dd16c2c5eda. To resume that exact run after subsequent code edits, scope PYTHONPATH to that snapshot for the command and restore the previous value afterward. Its manifest lists every package file checksum. This preserves the identity check instead of bypassing it.
 
+Full BPIC12 E3 uses the local C drive because it has more free space than the project drive. Its authoritative manifest/progress paths and input digests are in `artifacts/bpic12-v1/E3-location.json`. The output is under `%LOCALAPPDATA%/nhom19_cschttt/round4/bpic12-v1/`, outside cloud-synchronized folders. Resume an incomplete run with the exact source snapshot below; a completed manifest refuses overwrite.
+
+```powershell
+& {
+    $previousPath = $env:PYTHONPATH
+    $largeRun = Join-Path $env:LOCALAPPDATA 'nhom19_cschttt/round4/bpic12-v1'
+    try {
+        $env:PYTHONPATH = (Resolve-Path artifacts/source-snapshots/f6d7c71/src).Path
+        & .venv/Scripts/python.exe -m nhom19_process_xai experiment E3 --streaming --prepared data/processed/bpic12-v1.json --checkpoint artifacts/bpic12-v1/base/checkpoint.pt --output (Join-Path $largeRun 'E3-stream.json') --max-seconds 1800
+    } finally {
+        $env:PYTHONPATH = $previousPath
+    }
+}
+```
+
+After completion, run `scripts/audit_streamed_study.py` with that manifest, `data/processed/bpic12-v1.json` and `artifacts/bpic12-v1/base/checkpoint.pt`. Keep the SQLite database beside its manifest when auditing or resuming.
+
 BPIC13-CP follows the same prepare/train/predict commands with configs/datasets/bpic13-cp.json, data/processed/bpic13-cp-v1.json and artifacts/bpic13-cp-v1. Its streaming E2 command uses `experiment E2 --streaming ... --output artifacts/bpic13-cp-v1/E2-stream.json --max-seconds 600`. Diagnostic fixture runs use separate E2-AC.json, E2-UNI.json and E3-AUTHOR.json outputs under pipeline-fixture-v2. The actual completion status is in EXPERIMENTAL_RESULTS.md and the sealed manifests.
 
 ```powershell
