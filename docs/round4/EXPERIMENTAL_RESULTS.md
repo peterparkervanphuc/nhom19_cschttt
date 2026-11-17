@@ -1,6 +1,6 @@
 # Round 4 experimental results
 
-Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Six real-log and four author-supplied synthetic-log baselines have executed on verified inputs. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round 3 and Round 3.6. Every result below retains its own dataset, split, source and checkpoint identity.
+Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Seven real-log and four author-supplied synthetic-log baselines have executed on verified inputs. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round 3 and Round 3.6. Every result below retains its own dataset, split, source and checkpoint identity.
 
 | Component | Execution status | Evidence |
 |---|---|---|
@@ -27,6 +27,7 @@ The runs use the verified official version 1 archives, activity-only labels, a c
 | BPIC13 closed problems | 1,574/1,574 | .4916116862 | .5654383736 | .5217793991 | 19.217390 |
 | BPIC13 incidents | 17,402/17,402 | .7093138347 | .6971037812 | .6693827922 | 156.156451 |
 | BPIC12 O | 7,763/7,763 | .8249324235 | .8191420842 | .7993637164 | 53.697025 |
+| BPIC12 W | 47,280/47,280 | .8840351369 | .8821277496 | .8803739866 | 800.939466 |
 | BPIC12 WC | 18,472/18,472 | .7770249616 | .7877327848 | .7704196948 | 184.164754 |
 | Helpdesk | 4,983/4,983 | .8164058218 | .7967088100 | .7516142831 | 35.086813 |
 
@@ -35,6 +36,8 @@ Artifacts: artifacts/sepsis-v1/base and predictions.json; artifacts/bpic13-cp-v1
 BPIC13 incidents outputs use the same paths under `artifacts/bpic13-i-v1/`. Checkpoint SHA-256 and all target/prefix IDs were verified. Independent sklearn metrics agreed with the sealed record. Paper Table 2 gives precision/accuracy/F1 of .50/.69/.57 for BPIC13-I. The local weighted F1 gap is approximately +.0994 on the independent split, with historical checkpoint linkage still unknown.
 
 BPIC12_O outputs use `artifacts/bpic12-o-v1/`. The CLI passed the expected input hash and count checks. It retained 31,244 out of 262,200 source events with prefix `O_`, removing 8,072 of 13,087 cases. The 7,763 prediction IDs and targets matched the prepared split exactly, and sklearn reproduced the metrics. Published precision/accuracy/F1 are .96/.93/.93. The local F1 difference is −.1306 on the independent split.
+
+BPIC12_W outputs use `artifacts/bpic12-w-v1/`. A second XES scan reconstructed all 47,280 test prefix IDs and observed labels from the official raw archive and independent case split. It matched every prediction row, checked the checkpoint hash and reproduced the metrics with sklearn. The audit is in `prediction-audit.json`.
 
 BPIC12_WC outputs use `artifacts/bpic12-wc-v1/`. The 18,472 prediction IDs, targets and checkpoint hash match the prepared data and baseline. Sklearn reproduced the reported metrics. Paper Table 2 gives precision/accuracy/F1 of .75/.78/.75. The local F1 difference is approximately +.0204 on the independent split.
 

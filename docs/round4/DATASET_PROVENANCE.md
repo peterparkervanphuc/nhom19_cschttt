@@ -41,6 +41,8 @@ The project CLI also prepared BPIC12_O from the verified archive. The audit matc
 
 The CLI preparation for BPIC12_WC kept 170,107 events out of 262,200 after the `W_` filter and 72,413 after the `COMPLETE` filter. The first filter removed 3,429 cases. The second removed none. All preserved records match both predicates. Baseline training and prediction completed for all 18,472 test prefixes.
 
+All four BPIC12 preparations now pass the independent CLI input and count checks. BPIC12_W kept all lifecycle variants and wrote a 497,254,915-byte prepared artifact in 42.77 seconds, with an observed peak process working set of 3,051,466,752 bytes. The full BPIC12 wrote 826,933,234 bytes in 92.42 seconds. The Windows launcher memory observation for the full log measured the wrapper process, so the workload peak is unverified for that preparation. Both preparation receipts are in the respective `artifacts/bpic12-w-v1/` and `artifacts/bpic12-v1/` folders.
+
 ## Helpdesk · acquired 2026-11-17
 
 The official 4TU v1 record for Massimiliano Polato's Helpdesk provides finale.csv and a README identifying 4,580 cases, 21,348 events and 14 activities. The files passed the publisher's MD5 and byte-count checks. The CSV SHA-256 is 31024fa6da0a35578643d50f2bea6e90d5ce97628b64851e271b521f005eef1c. The record declares the same 4TU General Terms of Use as the other acquired datasets. The raw files and retrieval receipt remain under ignored data/raw/helpdesk-4tu-v1/. [Dataset DOI](https://doi.org/10.4121/uuid:0c60edf1-6f83-4e75-9367-4c63b3e9d5bb) · [Official metadata](https://data.4tu.nl/v2/articles/12675977)
