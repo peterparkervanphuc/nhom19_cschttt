@@ -31,6 +31,7 @@ The locked D02 decision also preserves a dimensional difference. The independent
 | BPIC13-CP E3 | Mean prefix TVD .222190 over 1,574 prefixes | Paper masking profile. |
 | BPIC13 incidents predictive performance | Accuracy .697104 and weighted F1 .669383 on all 17,402 prefixes | Independently checked against sklearn. The paper reports .69 and .57, respectively, with historical run linkage still unverified. |
 | BPIC13 incidents E1 | Mean tau-b .699499 over 12,498 valid results, out of 17,402 prefixes | Completed all 304,355 variants across two sessions. |
+| BPIC13 incidents BE evaluation | Completeness F1 .799195 on 13,921 scheduled prefixes. Correctness .247242 over 9,387 valid prefixes. | Five Co03 candidates, both complete BE graphs and all nine metric derivations passed their audits. No AE comparison was executed. |
 | BPIC13-CP BE evaluation | Mean completeness F1 .777019 on 1,259 scheduled prefixes. Correctness −.093826 over 643 valid prefixes. | All nine BE outputs are available. AE and method differences remain unevaluated on this cohort. |
 | Sequence paired BE/AE evaluation | 2,640 scheduled prefixes. AE F1 .200579 and BE F1 .295173. Paired AE-minus-BE consistency .405572 on 1,944 valid pairs. | Exhaustive baseline and candidate graphs. Every comparison is descriptive. |
 | Sequence reference structure | BE shares 10 of 11 direct BPMN edges with 3 extras. AE shares all 11 with 34 extras. | Direct-flow agreement on the verified sequence. |
@@ -54,12 +55,12 @@ All twelve logs have audited next-activity predictions. A workload count describ
 
 | Log | E1 | E2-FC | E3-PAPER | BE | Exhaustive AE and evaluation |
 |---|---|---|---|---|---|
-| BPIC12 | ≥2,440,580,925 variants, storage-limited | Pending | Running; local C-drive ledger | Pending | AE workload check pending. BE-only XAI variant IDs alone require ≥124.9 GB. |
+| BPIC12 | ≥2,440,580,925 variants, storage-limited | Pending | 10,036/73,742 persisted; RAM-floor pause on C | Pending | AE workload check pending. BE-only XAI variant IDs alone require ≥124.9 GB. |
 | BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 contexts. At least 47.5 GB of context text, storage-limited. BE-only evaluation verified. |
 | BPIC12_W | Verified, 1,334,973 variants | Pending | Verified | Running | BE workload check underway |
 | BPIC12_WC | Verified | 77,590/184,720 persisted; RAM-floor pause | Verified | Verified | Approximately 5.633 × 10^19 scheduled contexts |
 | BPIC13_CP | Verified | Verified | Verified | Verified | 809,189,178 contexts. At least 241 GB of context text, storage-limited. BE-only evaluation verified. |
-| BPIC13 incidents | Verified | Verified | Verified | Verified | Approximately 1.595 × 10^37 scheduled contexts. BE-only evaluation running. |
+| BPIC13 incidents | Verified | Verified | Verified | Verified | Approximately 1.595 × 10^37 scheduled contexts. BE-only evaluation verified. |
 | Helpdesk | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
 | Sepsis | 15,000 of 2,425,371,457 variants persisted | Verified | Verified | Verified | Approximately 9.578 × 10^52 scheduled contexts. BE-only XAI variant IDs alone require ≥120.4 GB. |
 | Complex-Model | 15,755,268,423 variants scheduled | 23,809/215,550 persisted; RAM-floor pause | Verified | Verified | Approximately 4.058 × 10^20 scheduled contexts. BE-only XAI variant IDs alone require ≥808.3 GB. |

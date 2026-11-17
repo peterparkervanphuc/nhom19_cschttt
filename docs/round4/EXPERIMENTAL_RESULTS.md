@@ -214,6 +214,8 @@ The published BE column comes from the supplied QA-corrected evidence matrix, sh
 
 The pinned author Co01 implementation computes cosine distances between vectors of consequent-activity counts for its explanation-side importance. Its shared importance function uses the first 20 artificial variants and initializes a score for every input-vocabulary entry. The locked independent Co01 instead averages `1 − Jaccard` on directed-edge projections over all shared E1 variants and ranks the activities present in the prefix. Both report Kendall correlation, but their inputs differ. That source-level difference is one reason the archived and independent correctness means are descriptive comparisons. Its contribution to the observed sign differences has not been isolated. [Pinned Co01 calculation](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/processtransformer/xai/metrics/correctness_co01.py#L96-L123) · [Pinned importance function](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/processtransformer/xai/metrics/feature_importance.py#L66-L137)
 
+Among eligible BPIC13-CP consistency pairs, 0/1,207 had both projected graphs empty. The same count was 0/10,736 near and 0/1,737 far variant pairs. Global BE compactness was three rules with mean RHS 1.666667. The per-prefix mean F1 is based on per-prefix scores. The sealed output, graph receipt hashes, cohort membership, eligibility and null reasons are under `artifacts/bpic13-cp-v1/evaluation-be/evaluation.json`.
+
 ### BPIC12_O BE-only evaluation
 
 The independent run evaluated BE on the fixed seed-404 sample of 6,210 of 7,763 test prefixes. The audit recomputed all five Co03 model distances and verified the selection of seed 3001, distance .210044. The baseline and candidate BE graphs cover all 7,763 prefixes, with 12 and 13 directed edges respectively. Their recorded AE schedules remain unexecuted. The candidate alone would require at least 77,629,668,696 bytes of context text. See `artifacts/bpic12-o-v1/evaluation-be/evaluation-audit.json` and `candidate-graph-audit.json` in the same directory.
@@ -232,7 +234,23 @@ The independent run evaluated BE on the fixed seed-404 sample of 6,210 of 7,763 
 
 The archived completeness means use 100 weighted rows per method. The 400 archived correctness rows have 265 valid values for BE, and consistency uses 125 values. The differences in cohort, checkpoint and metric procedures limit the comparison to descriptive values. The independent run has no AE evaluation or paired differences.
 
-Among eligible consistency pairs, 0/1,207 had both projected graphs empty. The same count was 0/10,736 near and 0/1,737 far variant pairs. Global BE compactness was three rules with mean RHS 1.666667. The per-prefix mean F1 is based on per-prefix scores. The sealed output, graph receipt hashes, cohort membership, eligibility and null reasons are under `artifacts/bpic13-cp-v1/evaluation-be/evaluation.json`.
+### BPIC13 incidents BE-only evaluation
+
+The completed run uses 13,921 prefixes sampled with seed 404 from all 17,402 test prefixes. Co03 selected seed 3004 with trainable-weight distance .283060 among five candidates. The baseline and candidate BE graphs both cover the full test set and each has six edges. The XAI auditor verified checkpoint hashes, all five distances, the sampled IDs, graph projections and overlaps, the nine per-prefix metric derivations, nulls and aggregate summaries. The selected candidate graph passed its separate graph and exhaustive-AE workload audit. Receipts are `artifacts/bpic13-i-v1/evaluation-be/evaluation-audit.json` and `candidate-audit.json`.
+
+| Metric | Independent BE mean ± sample SD | Valid / scheduled | Table 3 BE mean ± sample SD |
+|---|---:|---:|---:|
+| Correctness | .247242 ± .931498 | 9,387 / 13,921 | NaN |
+| Completeness precision | .733999 ± .303686 | 13,921 / 13,921 | .35 ± .05 |
+| Completeness recall | .987680 ± .080022 | 13,921 / 13,921 | .26 ± .04 |
+| Completeness F1 | .799195 ± .226498 | 13,921 / 13,921 | .29 ± .04 |
+| Consistency | .837638 ± .108410 | 13,551 / 13,921 | .01 ± .02 |
+| Continuity | .786360 ± .295812 | 13,921 / 13,921 | .19 ± .24 |
+| Contrastivity | .589046 ± .198655 | 13,049 / 13,921 | .04 ± .18 |
+| Compactness, rules | 1.869262 ± .641481 | 13,921 / 13,921 | 1.38 ± .49 |
+| Compactness, mean RHS size | 2.246785 ± .475583 | 13,921 / 13,921 | .19 ± .24 |
+
+The archived correctness output has zero finite values among 400 rows; NaN remains undefined. Archived completeness uses 100 weighted rows, consistency has 178 values, and continuity, contrastivity and compactness each have 400. These populations, metric procedures and checkpoints differ from the independent run. The table supplies descriptive comparisons and establishes neither improvement nor statistical significance. The candidate's exhaustive AE schedule is approximately 1.595 × 10^37 contexts, with a maximum of 121 eligible positions. AE metrics and paired method differences remain unevaluated.
 
 ### Table 3 archive reconciliation
 
