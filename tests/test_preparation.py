@@ -35,6 +35,35 @@ def test_xes_empty_and_duplicate_case(tmp_path):
         read_xes(path)
 
 
+def test_filtered_xes_matches_full_log_filtering(tmp_path):
+    def event(label, lifecycle):
+        return (f'<event><string key="concept:name" value="{label}"/>'
+                f'<string key="lifecycle:transition" value="{lifecycle}"/>'
+                '<date key="time:timestamp" value="2025-01-01T00:00:00Z"/></event>')
+
+    traces = {"b": [("O_A", ""), ("W_A", "complete"), ("W_B", "complete")],
+              "a": [("W_B", "start"), ("W_B", "complete"), ("W_A", "complete")],
+              "x": [("O_B", "complete")], "y": [("W_A", "start")], "empty": []}
+    source = tmp_path / "log.xes"
+    source.write_text('<log xmlns="http://www.xes-standard.org/">' + "".join(
+        f'<trace><string key="concept:name" value="{case}"/>'
+        + "".join(event(*activity) for activity in activities) + '</trace>'
+        for case, activities in traces.items()) + '</log>', encoding="utf-8")
+    filters = [{"kind": "activity_prefix", "value": "W_"}, {"kind": "lifecycle", "value": "complete"}]
+    raw_audit = {}
+    expected, expected_filters = preprocess(read_xes(source, audit=raw_audit), filters, True)
+    config = {"dataset_id": "example", "path": source.name, "format": "xes", "source": "generated",
+              "version": "1", "license": "test", "scope": "fixture", "filters": filters,
+              "lifecycle_classifier": True}
+    output = tmp_path / "prepared.json"
+    actual = prepare_file(config, tmp_path, output)
+    assert read_sealed(output)["events"] == [event.record() for event in expected]
+    assert [entry["source_ordinal"] for entry in actual["events"]] == [1, 2, 4, 5]
+    assert actual["adapter"] == raw_audit == {"empty_cases": ["empty"], "trace_count": 5}
+    assert actual["filters"] == expected_filters
+    assert [row["removed_cases"] for row in actual["filters"]] == [["x"], ["y"]]
+
+
 def test_checksum_and_nonoverwrite(tmp_path):
     config_path = Path(__file__).parents[1] / "configs/fixture/dataset.json"
     config = json.loads(config_path.read_text())
