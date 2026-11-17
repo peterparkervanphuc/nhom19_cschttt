@@ -43,9 +43,11 @@ def _write_graph(explanation_path: Path, output: Path) -> dict:
                               "edges": edges, "scope": "global-test-prefix-graph",
                               "explanation_sha256": file_hash(explanation_path)}))
     atomic_write(paths[1], lambda path: nx.write_graphml(graph, path))
-    figure, axes = plt.subplots(figsize=(max(6, len(graph) * .6), max(4, len(graph) * .35)))
+    circular = len(graph) > 6
+    size = max(8, len(graph) * .67)
+    figure, axes = plt.subplots(figsize=(size, size) if circular else (6, 4))
     if graph:
-        positions = nx.spring_layout(graph, seed=404)
+        positions = nx.circular_layout(graph) if circular else nx.spring_layout(graph, seed=404)
         nx.draw_networkx(graph, positions, ax=axes, node_color="#e5edf6", edge_color="#3b4b5c",
                          edgelist=[edge for edge in graph.edges if edge[0] != edge[1]],
                          arrows=True, arrowsize=16, node_size=2200, font_size=9,
@@ -54,14 +56,24 @@ def _write_graph(explanation_path: Path, output: Path) -> dict:
         # nodes. Use an explicit outward curve and reserve plot margins.
         for node in nx.nodes_with_selfloops(graph):
             x, y = positions[node]
-            loop = FancyArrowPatch(path=DrawingPath([(x - .12, y + .10), (x - .55, y + .65),
-                                                     (x + .55, y + .65), (x + .12, y + .10)],
+            if circular:
+                # The circular layout places the nodes on a unit-radius ring.
+                # Curve each self-loop away from the other nodes and edges.
+                points = [(x + radial * x - lateral * y, y + radial * y + lateral * x)
+                          for radial, lateral in [(0.07, -0.07), (0.38, -0.18),
+                                                  (0.38, 0.18), (0.07, 0.07)]]
+            else:
+                points = [(x - .12, y + .10), (x - .55, y + .65),
+                          (x + .55, y + .65), (x + .12, y + .10)]
+            loop = FancyArrowPatch(path=DrawingPath(points,
                                                     [DrawingPath.MOVETO, DrawingPath.CURVE4,
                                                      DrawingPath.CURVE4, DrawingPath.CURVE4]),
                                    arrowstyle="-|>", mutation_scale=16, color="#3b4b5c",
                                    zorder=0, clip_on=False)
             axes.add_patch(loop)
         axes.margins(.25)
+        if circular:
+            axes.set_aspect("equal")
     else:
         axes.text(.5, .5, "No explanation edges", transform=axes.transAxes, ha="center")
     axes.set_title(explanation["method"] + " — activity relations")
