@@ -31,38 +31,61 @@ def activity_attention(prediction: Prediction, activities, universe) -> tuple[np
     return np.array([totals[label] for label in universe]), outside
 
 
-def e1_prefix(predictor: Predictor, prefix: dict, graph, starts) -> dict:
+def e1_records(predictor: Predictor, prefix: dict, selections):
     baseline = predictor.predict(prefix["activities"])
     universe = sorted(set(prefix["activities"]))
-    impact = {label: [] for label in universe}
-    attention = []
-    records = []
-    for variant in variants(prefix["activities"], prefix["prefix_id"], graph, starts):
+    for variant in selections:
         prediction = predictor.predict(variant.activities)
         similarity = cosine_similarity(baseline.probabilities, prediction.probabilities)
         if similarity is None:
             raise ArithmeticError("Normalized prediction vectors have undefined cosine")
-        impact[variant.original_activity].append(1 - similarity)
         scores, outside = activity_attention(prediction, variant.activities, universe)
-        if similarity >= .8:
-            attention.append(scores)
-        records.append({**asdict(variant), "cosine_similarity": similarity,
+        yield {**asdict(variant), "cosine_similarity": similarity,
                         "cosine_distance": 1 - similarity,
                         "probabilities": prediction.probabilities.tolist(),
                         "attention_mass": scores.tolist(), "outside_universe_mass": outside,
-                        "eligible_near": similarity >= .8})
-    common_raw = np.array([np.mean(impact[label]) for label in universe])
+                        "eligible_near": similarity >= .8}
+
+
+def e1_prefix(predictor: Predictor, prefix: dict, graph, starts) -> dict:
+    universe = sorted(set(prefix["activities"]))
+    state = e1_state(universe)
+    records = list(e1_records(predictor, prefix, variants(prefix["activities"], prefix["prefix_id"], graph, starts)))
+    for row in records:
+        e1_accumulate(state, row)
+    return {**e1_summary(prefix["prefix_id"], state), "variants": records}
+
+
+def e1_state(universe):
+    return {"universe": universe, "impact_sum": dict.fromkeys(universe, 0.0),
+            "impact_count": dict.fromkeys(universe, 0), "mass_sum": [0.0] * len(universe),
+            "near_count": 0, "completed_variants": 0}
+
+
+def e1_accumulate(state, row):
+    label = row["original_activity"]
+    state["impact_sum"][label] += row["cosine_distance"]
+    state["impact_count"][label] += 1
+    state["completed_variants"] += 1
+    if row["eligible_near"]:
+        state["mass_sum"] = [a + b for a, b in zip(state["mass_sum"], row["attention_mass"], strict=True)]
+        state["near_count"] += 1
+
+
+def e1_summary(prefix_id, state):
+    universe = state["universe"]
+    common_raw = np.array([state["impact_sum"][label] / state["impact_count"][label] for label in universe])
     common = normalize_importance(common_raw)
-    attention_raw = np.mean(attention, axis=0) if attention else np.zeros(len(universe))
+    attention_raw = np.asarray(state["mass_sum"]) / max(1, state["near_count"])
     attention_normalized = normalize_importance(attention_raw)
     score = tau_b(common, attention_normalized) if common is not None and attention_normalized is not None else None
-    return {"prefix_id": prefix["prefix_id"], "universe": universe,
+    return {"prefix_id": prefix_id, "universe": universe,
             "common_raw": common_raw.tolist(), "attention_raw": attention_raw.tolist(),
             "common": None if common is None else common.tolist(),
             "attention": None if attention_normalized is None else attention_normalized.tolist(),
             "tau_b": score, "null_reason": "undefined_importance_or_rank" if score is None else None,
-            "expected_variants": len(records), "completed_variants": len(records),
-            "near_count": len(attention), "variants": records}
+            "expected_variants": state["completed_variants"], "completed_variants": state["completed_variants"],
+            "near_count": state["near_count"]}
 
 
 def e2_pair(baseline: Prediction, modified: Prediction) -> dict:

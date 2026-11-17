@@ -39,6 +39,8 @@ def main(argv=None):
     experiment_parser.add_argument("--profile")
     experiment_parser.add_argument("--streaming", action="store_true")
     experiment_parser.add_argument("--max-seconds", type=float, default=3600)
+    experiment_parser.add_argument("--max-variants", type=int,
+                                   help="Checkpoint streaming E1 after this many new variants")
     for command in ("explain", "evaluate"):
         command_parser = subcommands.add_parser(command)
         command_parser.add_argument("--prepared", type=Path, required=True)
@@ -95,7 +97,15 @@ def main(argv=None):
         result = run_evaluation(read_sealed(args.prepared), args.checkpoint, args.output)
         print(json.dumps({"status": result["status"], "selected_seed": result["selected"]["seed"]}))
     elif args.command == "experiment":
-        if args.streaming:
+        if args.max_variants is not None and not (args.streaming and args.study == "E1"):
+            parser.error("--max-variants applies to streaming E1")
+        if args.streaming and args.study == "E1":
+            from .experiments.e1_streaming import run_streaming_e1
+            if args.profile is not None:
+                parser.error("E1 uses the locked primary profile")
+            result = run_streaming_e1(read_sealed(args.prepared), args.checkpoint, args.output,
+                                      args.max_seconds, stop_after_variants=args.max_variants)
+        elif args.streaming:
             from .experiments.streaming import run_streaming_study
             result = run_streaming_study(args.study, read_sealed(args.prepared), args.checkpoint,
                                         args.output, args.profile, args.max_seconds)
