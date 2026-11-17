@@ -70,3 +70,15 @@ def test_co03_and_all_xai_outputs(tmp_path):
         assert set(result["methods"][method]["summary"]) == set(METRICS)
         assert all(row["n_total"] == 2 for row in result["methods"][method]["summary"].values())
     assert read_sealed(tmp_path / "eval/evaluation.json")["status"] == "completed"
+    original = tmp_path / "eval/baseline-graphs/BE.json"
+    be_result = run_evaluation(data, tmp_path / "base/checkpoint.pt", tmp_path / "be",
+                               be_only=True, baseline_be=original)
+    assert be_result["methods"] == {"BE": result["methods"]["BE"]}
+    assert be_result["paired_status"] == "not_evaluated"
+    assert be_result["paired_AE_minus_BE"] is None
+    assert be_result["graph_runs"]["candidate-graphs"]["ae_completed"] == 0
+    assert not (tmp_path / "be/candidate-graphs/AE.json").exists()
+    with pytest.raises(ValueError, match="Graph identity or coverage mismatch"):
+        run_evaluation(data, tmp_path / "base/checkpoint.pt", tmp_path / "wrong",
+                       be_only=True, baseline_be=tmp_path / "be/candidate-graphs/BE.json")
+    assert not (tmp_path / "wrong/candidates").exists()

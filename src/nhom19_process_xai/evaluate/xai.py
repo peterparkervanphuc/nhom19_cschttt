@@ -8,13 +8,13 @@ import numpy as np
 import torch
 
 from ..artifacts import read_sealed, seal, write_json
-from ..data.pipeline import fingerprint
+from ..data.pipeline import file_hash, fingerprint
 from ..experiments.perturbations import training_dfg
 from ..experiments.studies import e1_prefix, normalize_importance
 from ..explain.runner import run_explainers
 from ..graphs.relations import project
 from ..model.predictor import Predictor
-from ..model.training import TrainingConfig, train
+from ..model.training import TrainingConfig, run_lock, train
 from .metrics import agreement, compactness, completeness, cosine_similarity, jaccard, summary, tau_b
 
 
@@ -135,13 +135,48 @@ def paired_method_differences(methods: dict) -> dict:
     return result
 
 
-def run_evaluation(prepared: dict, checkpoint: Path, directory: Path) -> dict:
+def _completed_graph(path, method, predictor, dataset, prefix_ids):
+    artifact = read_sealed(path)
+    identity = artifact["identity"]
+    if (artifact["status"] != "completed" or artifact["method"] != method
+            or identity["checkpoint"] != predictor.checkpoint_id or identity["dataset"] != dataset
+            or identity["prefix_ids"] != prefix_ids or tuple(identity["class_order"]) != predictor.class_order
+            or identity["be_profile"] != "BE-P1" or identity["ae_profile"] != "D07-D08"):
+        raise ValueError(f"Graph identity or coverage mismatch: {path}")
+    if method == "BE":
+        if artifact["expected_prefixes"] != len(prefix_ids) or artifact["completed_prefixes"] != len(prefix_ids):
+            raise ValueError(f"BE graph coverage mismatch: {path}")
+        if [record["prefix_id"] for record in artifact["prefix_records"]] != prefix_ids:
+            raise ValueError(f"BE graph prefix membership mismatch: {path}")
+    elif artifact["completed_contexts"] != artifact["expected_contexts"]:
+        raise ValueError(f"AE graph context coverage mismatch: {path}")
+    return {tuple(edge) for edge in artifact["edges"]}
+
+
+def run_evaluation(prepared: dict, checkpoint: Path, directory: Path, *,
+                   be_only: bool = False, baseline_be: Path | None = None) -> dict:
+    """Evaluate the locked cohort, with optional independent reporting for BE."""
+    if baseline_be is not None and not be_only:
+        raise ValueError("An existing BE graph can only be supplied to BE-only evaluation")
+    with run_lock(directory):
+        return _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be)
+
+
+def _run_evaluation(prepared, checkpoint, directory, be_only, baseline_be):
     output = directory / "evaluation.json"
     if output.exists():
         raise FileExistsError("Evaluation output already exists")
     baseline = Predictor(checkpoint, prepared)
     if baseline.identity["model"]["profile"] != "BASE":
         raise ValueError("XAI primary evaluation requires the baseline architecture")
+    dataset = fingerprint(prepared)
+    prefix_ids = sorted(prefix["prefix_id"] for prefix in prepared["prefixes"]["test"])
+    requested = ("BE",) if be_only else ("BE", "AE")
+    baseline_edges = {}
+    baseline_paths = {method: directory / "baseline-graphs" / f"{method}.json" for method in requested}
+    if baseline_be is not None:
+        baseline_paths["BE"] = baseline_be
+        baseline_edges["BE"] = _completed_graph(baseline_be, "BE", baseline, dataset, prefix_ids)
     candidates = []
     for seed in range(3001, 3006):
         candidate_dir = directory / "candidates" / str(seed)
@@ -153,35 +188,54 @@ def run_evaluation(prepared: dict, checkpoint: Path, directory: Path) -> dict:
     selected = min(candidates, key=lambda row: (-row["distance"], row["seed"]))
     selected_path = directory / "candidates" / str(selected["seed"]) / "checkpoint.pt"
     other = Predictor(selected_path, prepared)
-    for model_path, folder in [(checkpoint, "baseline-graphs"), (selected_path, "candidate-graphs")]:
-        status = run_explainers(prepared, model_path, directory / folder)
-        if status["status"] != "completed":
+    graph_jobs = [(selected_path, "candidate-graphs")]
+    if baseline_be is None:
+        graph_jobs.insert(0, (checkpoint, "baseline-graphs"))
+    graph_runs = {}
+    for model_path, folder in graph_jobs:
+        status = run_explainers(prepared, model_path, directory / folder, be_only=be_only)
+        graph_runs[folder] = {"ae_status": status["status"], "ae_expected": status["expected"],
+                              "ae_completed": status["completed"]}
+        if not be_only and status["status"] != "completed":
             raise ValueError("Evaluation requires completed global explainer graphs")
     cohort = sample_prefixes(prepared["prefixes"]["test"])
     graph, starts = training_dfg(prepared)
-    paired = []
+    candidate_edges = {}
+    graph_receipts = {}
+    rows_by_method = {method: [] for method in requested}
+    for method in requested:
+        base_path = baseline_paths[method]
+        other_path = directory / "candidate-graphs" / f"{method}.json"
+        if method not in baseline_edges:
+            baseline_edges[method] = _completed_graph(base_path, method, baseline, dataset, prefix_ids)
+        candidate_edges[method] = _completed_graph(other_path, method, other, dataset, prefix_ids)
+        graph_receipts[method] = {"baseline_graph_sha256": file_hash(base_path),
+                                  "candidate_graph_sha256": file_hash(other_path)}
     for prefix in cohort:
-        paired.append((prefix, baseline.predict(prefix["activities"]), e1_prefix(baseline, prefix, graph, starts),
-                       other.predict(prefix["activities"]), e1_prefix(other, prefix, graph, starts)))
+        p = baseline.predict(prefix["activities"])
+        q = other.predict(prefix["activities"])
+        features = e1_prefix(baseline, prefix, graph, starts)
+        other_features = e1_prefix(other, prefix, graph, starts)
+        for method in requested:
+            rows_by_method[method].append(evaluate_prefix(prefix, p, features, baseline_edges[method],
+                                                         q, other_features, candidate_edges[method]))
     methods = {}
-    for method in ("BE", "AE"):
-        base_artifact = read_sealed(directory / "baseline-graphs" / f"{method}.json")
-        other_artifact = read_sealed(directory / "candidate-graphs" / f"{method}.json")
-        base_edges = {tuple(edge) for edge in base_artifact["edges"]}
-        other_edges = {tuple(edge) for edge in other_artifact["edges"]}
-        rows = [evaluate_prefix(prefix, p, features, base_edges, q, other_features, other_edges)
-                for prefix, p, features, q, other_features in paired]
+    for method, rows in rows_by_method.items():
         aggregates = {}
         for metric in METRICS:
             aggregates[metric] = {**summary([row["values"][metric] for row in rows]),
                                   "null_reasons": dict(Counter(row["null_reasons"][metric] for row in rows
                                                                if row["values"][metric] is None))}
-        methods[method] = {"records": rows, "summary": aggregates, "global_compactness": compactness(base_edges)}
+        methods[method] = {"records": rows, "summary": aggregates,
+                           "global_compactness": compactness(baseline_edges[method])}
     result = {"status": "completed", "scope": prepared.get("scope"), "identity": baseline.identity,
+              "evaluation_mode": "be-only" if be_only else "paired",
+              "paired_status": "not_evaluated" if be_only else "completed",
+              "graph_receipts": graph_receipts, "graph_runs": graph_runs,
               "baseline_checkpoint": baseline.checkpoint_id, "candidates": candidates, "selected": selected,
               "sample_seed": 404, "sample_ids": [prefix["prefix_id"] for prefix in cohort],
               "sample_hash": fingerprint([prefix["prefix_id"] for prefix in cohort]),
               "population": len(prepared["prefixes"]["test"]), "methods": methods,
-              "paired_AE_minus_BE": paired_method_differences(methods)}
+              "paired_AE_minus_BE": None if be_only else paired_method_differences(methods)}
     write_json(output, seal(result))
     return result

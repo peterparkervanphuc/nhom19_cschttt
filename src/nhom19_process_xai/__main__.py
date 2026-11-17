@@ -49,6 +49,9 @@ def main(argv=None):
         if command == "explain":
             command_parser.add_argument("--be-only", action="store_true",
                                         help="Export the BE result and count the AE workload without running AE")
+        if command == "evaluate":
+            command_parser.add_argument("--be-only", action="store_true", help="Evaluate BE without running AE")
+            command_parser.add_argument("--baseline-be", type=Path, help="Reuse a verified BE graph with --be-only")
     graph_parser = subcommands.add_parser("graph")
     graph_parser.add_argument("--explanation", type=Path, required=True)
     graph_parser.add_argument("--output", type=Path, required=True)
@@ -94,8 +97,10 @@ def main(argv=None):
                           "ae_expected": result["expected"], "ae_completed": result["completed"],
                           "coverage": result["coverage"]}))
     elif args.command == "evaluate":
-        result = run_evaluation(read_sealed(args.prepared), args.checkpoint, args.output)
-        print(json.dumps({"status": result["status"], "selected_seed": result["selected"]["seed"]}))
+        result = run_evaluation(read_sealed(args.prepared), args.checkpoint, args.output,
+                                be_only=args.be_only, baseline_be=args.baseline_be)
+        print(json.dumps({"status": result["status"], "selected_seed": result["selected"]["seed"],
+                          "paired_status": result["paired_status"]}))
     elif args.command == "experiment":
         if args.max_variants is not None and not (args.streaming and args.study == "E1"):
             parser.error("--max-variants applies to streaming E1")
