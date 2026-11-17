@@ -34,7 +34,7 @@ Update PROGRESS.md after each milestone. REQUIREMENTS_TRACEABILITY.md maps all c
 ## Current continuation order
 
 1. Complete feasible streaming E2/E3 real-data runs with sealed per-prefix coverage. Preserve source snapshots when code changes so a partial run can resume with its exact code identity.
-2. Extend bounded/durable execution to E1 and the XAI orchestration. The current in-memory `run_study` and `pipeline` commands are fixture-oriented; use `--streaming` for large E2/E3. Do not launch full real-data `pipeline` without an AE work estimate.
+2. Use `experiment --streaming` for large E1–E3 runs. E1 can resume within a prefix and retains every evaluated variant. XAI orchestration still needs bounded execution. The in-memory `pipeline` is for feasible cohorts. Estimate AE before launching on a real log.
 3. Finish BE separately on real logs; report exhaustive AE infeasibility without substituting capped pilot graphs. Pilot Sepsis observed k=174, requiring 2^175 contexts for one prefix alone. A cap or sampled AE is a separate diagnostic/future decision, not primary compliance.
 4. Complete adapter/resource/provenance manifest audit, required figures and published-result comparison, independent review and final handoff. Resolve exact Helpdesk and four synthetic datasets through legitimate sources; do not fabricate substitute benchmark identities.
 

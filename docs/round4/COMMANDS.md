@@ -49,3 +49,9 @@ Count the exact E1 schedule without creating variants using the diagnostic below
 ```powershell
 & .venv/Scripts/python.exe scripts/count_e1_variants.py --prepared data/processed/sepsis-v1.json --output artifacts/sepsis-v1/E1-workload-counter.json
 ```
+
+Run E1 with a wall time quota and an optional quota for new variants. Use the same output path, dataset, checkpoint and source to resume. The SQLite ledger and prefix accumulators advance together in transactions. An incomplete session publishes progress under the sibling `E1-stream-e1-run/` directory. The result JSON appears only after all scheduled prefixes complete. Use the original source commit or its snapshot if resuming after code changes.
+
+```powershell
+& .venv/Scripts/python.exe -m nhom19_process_xai experiment E1 --streaming --prepared data/processed/sepsis-v1.json --checkpoint artifacts/sepsis-v1/base/checkpoint.pt --output artifacts/sepsis-v1/E1-stream.json --max-variants 5000 --max-seconds 60
+```
