@@ -2,12 +2,15 @@
 
 import argparse
 from contextlib import closing
+import hashlib
+import io
 import json
 from math import floor, fsum, isclose
 from pathlib import Path
 import sqlite3
 from statistics import median
 
+import numpy as np
 from nhom19_process_xai.artifacts import read_sealed
 from nhom19_process_xai.data.pipeline import file_hash, fingerprint
 from nhom19_process_xai.evaluate.metrics import summary
@@ -139,8 +142,74 @@ def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
     return count, details
 
 
-def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
+def audit_attention_cache(db, cache_path, manifest, activities):
+    """Link retained baseline tensors to E3-PAPER's complete masking records."""
+    require(manifest["study"] == "E3" and manifest["profile"] == "E3-PAPER",
+            "Baseline attention audit requires E3-PAPER")
+    wal = cache_path.with_suffix(".sqlite-wal")
+    require(not (cache_path.parent / "writer.lock").exists()
+            and (not wal.exists() or wal.stat().st_size == 0), "Baseline attention cache is still open")
+    digest = file_hash(cache_path)
+    count = occurrences = 0
+    with closing(sqlite3.connect(cache_path.resolve().as_uri() + "?mode=ro&immutable=1", uri=True)) as cache:
+        identity = json.loads(cache.execute("SELECT value FROM metadata WHERE key='identity'").fetchone()[0])
+        require(identity["dataset"] == manifest["identity"]["dataset"]
+                and identity["checkpoint"] == manifest["baseline_checkpoint"]
+                and set(identity["prefix_ids"]) == activities.keys(), "Baseline attention cache identity differs")
+        for prefix_id, raw in db.execute("SELECT prefix_id,payload FROM records ORDER BY prefix_id"):
+            row = decode(raw)
+            require(list(identity["class_order"]) == row["class_order"], "Baseline attention classes differ")
+            key = fingerprint([identity["checkpoint"], identity["class_order"], activities[prefix_id],
+                               [], "E3-PAPER", "cpu", "float32"])
+            saved = cache.execute("SELECT payload,checksum FROM inference WHERE key=?", (key,)).fetchone()
+            require(saved is not None and hashlib.sha256(saved[0]).hexdigest() == saved[1],
+                    "Baseline attention tensor missing or checksum differs")
+            with np.load(io.BytesIO(saved[0]), allow_pickle=False) as arrays:
+                original, probabilities = arrays["attention"], arrays["probabilities"]
+                require(np.array_equal(arrays["valid"], row["valid"])
+                        and np.array_equal(probabilities, row["base_probabilities"]),
+                        "Baseline attention cache prediction or mask differs")
+            length = len(activities[prefix_id])
+            require(original.ndim == 3 and original.shape[1:] == (length, length)
+                    and np.isfinite(original).all() and (original >= 0).all(), "Invalid baseline attention tensor")
+            for record in row["records"]:
+                position = record["position"]
+                modified = original.copy()
+                modified[:, position, :] = 0
+                modified[:, :, position] = 0
+                before, after = original.sum(-1), modified.sum(-1)
+                eligible = (before > 0) & (after > 0)
+                normalized = []
+                for h, q in zip(*np.where(eligible)):
+                    normalized.append(float(np.abs(original[h, q] / before[h, q]
+                                                   - modified[h, q] / after[h, q]).sum() / 2))
+                query = original[:, position, :].sum(-1)
+                column = original[:, :, position].sum(-1) - original[:, position, position]
+                expected = {"original_row_mass": before, "modified_row_mass": after,
+                            "query_removed_mass": query, "key_only_removed_mass": column,
+                            "support_removed_mass": (query + column).sum(),
+                            "net_mass_removed": original.sum() - modified.sum(),
+                            "remaining_per_head": after.sum(-1),
+                            "half_l1": np.abs(original - modified).sum() / 2,
+                            "row_renormalized_tvd": normalized,
+                            "excluded_zero_rows": int((~eligible).sum())}
+                for field, value in expected.items():
+                    actual, expected_value = np.asarray(record[field]), np.asarray(value)
+                    require(actual.shape == expected_value.shape
+                            and np.allclose(actual, expected_value, rtol=0, atol=1e-12),
+                            f"E3 attention displacement differs from retained tensor: {field}")
+                occurrences += 1
+            count += 1
+    require(count == len(activities) and file_hash(cache_path) == digest, "Baseline attention coverage or digest differs")
+    return {"prefixes": count, "occurrences": occurrences, "cache_sha256": digest,
+            "cache_path": str(cache_path.resolve()), "cache_source_sha256": identity["source"],
+            "retention": "Full baseline tensors retained in the referenced closed cache; no inference replay"}
+
+
+def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None, baseline_cache=None):
     manifest = read_sealed(manifest_path)
+    require(baseline_cache is None or manifest["study"] == "E3" and manifest.get("profile") == "E3-PAPER",
+            "Baseline attention audit requires E3-PAPER")
     prepared = read_sealed(prepared_path)
     study = manifest["study"]
     require(study in {"E1", "E2", "E3"} and manifest["status"] == "completed",
@@ -149,6 +218,8 @@ def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
     checkpoint = file_hash(checkpoint_path)
     field = "occurrence_ids" if study == "E3" else "activities"
     prefixes = {row["prefix_id"]: list(row[field]) for row in prepared["prefixes"]["test"]}
+    activities = ({row["prefix_id"]: list(row["activities"]) for row in prepared["prefixes"]["test"]}
+                  if baseline_cache is not None else None)
     require(identity["study"] == study and identity["dataset"] == fingerprint(prepared)
             and identity["checkpoint"] == checkpoint == manifest["baseline_checkpoint"]
             and set(identity["prefix_ids"]) == prefixes.keys()
@@ -167,8 +238,11 @@ def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
             units = audit_e1(db, manifest, prefixes, workload["variant_count"])
         else:
             units, details = audit_e2_e3(db, ledger, manifest, prefixes, checkpoint)
+        if baseline_cache is not None:
+            details["baseline_attention_cache"] = audit_attention_cache(db, baseline_cache, manifest, activities)
     return {"status": "verified", "study": study, "prefixes": len(prefixes), "units": units,
-            "manifest_sha256": file_hash(manifest_path), "records_sha256": manifest["records_sha256"], **details}
+            "manifest_sha256": file_hash(manifest_path), "records_sha256": manifest["records_sha256"],
+            "auditor_sha256": file_hash(Path(__file__)), **details}
 
 
 if __name__ == "__main__":
@@ -177,5 +251,6 @@ if __name__ == "__main__":
     parser.add_argument("--prepared", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--workload", type=Path)
+    parser.add_argument("--baseline-cache", type=Path, help="Closed BE inference cache retaining the same baseline attention")
     args = parser.parse_args()
-    print(json.dumps(audit(args.manifest, args.prepared, args.checkpoint, args.workload)))
+    print(json.dumps(audit(args.manifest, args.prepared, args.checkpoint, args.workload, args.baseline_cache)))
