@@ -2,7 +2,7 @@
 
 Status: in progress. This report records verified Round 4 evidence and the remaining acceptance criteria as of 2026-11-17.
 
-The independent Python package implements next-activity prediction, the three attention experiments, BE and AE, and predictive and explanation metrics. The integrated command has executed every stage on the committed synthetic fixture. On official event logs, BPIC13-CP has completed E1, E2, E3 and BE. Sepsis has completed prediction, E3 and BE. The resource measurements below prevent interpreting those runs as complete coverage of the paper's evaluation.
+The independent Python package implements next-activity prediction, the three attention experiments, BE and AE, and predictive and explanation metrics. The integrated command has executed every stage on the committed fixture. The author-supplied Sequence and Long-Dist-Dep logs completed E1–E3 and exhaustive BE/AE. Sequence also completed all nine paired explanation outputs and a BPMN structural comparison. The real-log results and outstanding workloads are below.
 
 ## Architecture and research fidelity
 
@@ -28,6 +28,8 @@ The paper and locked Round 3.6 decisions define the baseline. The sibling author
 | BPIC13 incidents predictive performance | Accuracy .697104 and weighted F1 .669383 on all 17,402 prefixes | Independently checked against sklearn. The paper reports .69 and .57, respectively, with historical run linkage still unverified. |
 | BPIC13 incidents E1 | Mean tau-b .699499 over 12,498 valid results, out of 17,402 prefixes | Completed all 304,355 variants across two sessions. |
 | BPIC13-CP BE evaluation | Mean completeness F1 .777019 on 1,259 scheduled prefixes. Correctness −.093826 over 643 valid prefixes. | All nine BE outputs are available. AE and method differences remain unevaluated on this cohort. |
+| Sequence paired BE/AE evaluation | 2,640 scheduled prefixes. AE F1 .200579 and BE F1 .295173. Paired AE-minus-BE consistency .405572 on 1,944 valid pairs. | Exhaustive baseline and candidate graphs. Every comparison is descriptive. |
+| Sequence reference structure | BE shares 10 of 11 direct BPMN edges with 3 extras. AE shares all 11 with 34 extras. | Direct-flow agreement on the verified sequence. |
 | BPIC12_O predictive performance | Accuracy .819142 and weighted F1 .799364 on 7,763 prefixes | The project CLI reproduced the expected filtered dataset counts and sklearn reproduced the metrics. |
 | BPIC12_WC predictive performance | Accuracy .787733 and weighted F1 .770420 on 18,472 prefixes | Complete ordered `W_` and `COMPLETE` filters with expected counts. Sklearn reproduced the metrics. |
 | Helpdesk predictive performance | Accuracy .796709 and weighted F1 .751614 on 4,983 prefixes | Official CSV and pinned XES agree on the fields used by the model. Sklearn reproduced the metrics. |
@@ -44,17 +46,17 @@ The [experimental results record](EXPERIMENTAL_RESULTS.md) gives artifact paths,
 |---|---|---|
 | Independent Transformer and three attention methods | PASS | Unit tests and completed research runs on the fixture and BPIC13-CP |
 | Independent BE and AE | PASS for implementation | Full fixture graph/matrix coverage and resumption tests. Real exhaustive coverage is listed separately below. |
-| Predictive and XAI evaluation, integrated workflow | PASS for fixtures | Predictive evaluation on official logs, all nine XAI outputs on the fixture, and directed export with artifact receipts |
+| Predictive and XAI evaluation, integrated workflow | PASS for fixtures and Sequence evaluation | Predictive evaluation on official logs, all nine paired XAI outputs on the fixture and Sequence, and directed export with artifact receipts |
 | Reference and baseline boundaries | PASS | Read-only author repository. Sampling diagnostics are separate from primary schedules. |
 | Environment and dependency recreation | PASS | CPU lock installed in a second uv Python 3.11.15 environment, tests and `pip check` verified |
 | Data pipeline and twelve-log scope | PASS for the input gate | Twelve log variants have verified input provenance and counts. The author archive supplies the four synthetic XES files and reference BPMNs. Full pipeline execution remains tracked separately. |
 | Tests and end-to-end checks | PASS | 54 tests in `artifacts/s0/filtered-xes-suite.xml`. Complete fixture pipeline, interrupted E1 resume, BE-only evaluation parity, trace-wise filter audit, and checksum checks on full E2/E3 runs. |
-| Full feasible real experiments and comparison | PARTIAL | Six predictive baselines, several complete attention studies and one real BE evaluation are verified. Remaining feasible studies and the real paired AE–BE benchmark are open. Author execution is not yet established. |
+| Full feasible real experiments and comparison | PARTIAL | Six real and four synthetic predictive baselines, several complete attention studies and the Sequence paired XAI benchmark are verified. Remaining feasible studies and paired evaluation on real logs are open. Author-runtime execution remains unverified. |
 | Full exhaustive AE on Sepsis | BLOCKED for execution | A single prefix has 174 eligible positions. Adding ordinary local or cloud resources cannot make this schedule feasible. |
 | Commands, configuration, seeds, checkpoints | PASS for reported runs | [Commands](COMMANDS.md), versioned configs, source hashes and sealed run receipts |
 | Plan, progress, traceability and experimental record | PASS | Maintained in `docs/round4/` |
 | Final technical report and Round 5 handoff | PARTIAL | This is a working report. Full acceptance and a final handoff still depend on unresolved coverage and provenance. |
 
-Round 5 can use the checked fixture as a software regression baseline. Published-result reproduction and real paired explanation benchmarks remain unverified. Any later approximation of AE or E1 must have a separate experiment ID and comparison design.
+Round 5 can use the checked fixture and Sequence as software regression baselines. The author archive reconciles the printed Tables 2 and 3 values. Independent historical-run reproduction and paired explanation evaluation on real logs remain open. Any later approximation of AE or E1 must have a separate experiment ID and comparison design.
 
 To continue, use [the recorded commands](COMMANDS.md) with the same prepared file, checkpoint, output path and source version for a partial run. The current experimental priority is to finish feasible studies on verified official logs and retain precise workload and provenance evidence for each study that cannot complete.

@@ -150,3 +150,23 @@ The tables use `artifacts/synthetic-{sequence,long-dist-dep,complex-model,looped
 ### Sequence BPMN comparison
 
 The archived `longer_sequence.bpmn` contains 12 tasks and no gateways. The diagnostic maps each BPMN name `X` to the XES activity label `Activity X` and takes the 11 direct task-to-task sequence flows. After excluding the start and end events, those flows match the complete observed activity sequence in both independent splits. BE shares 10 edges with the reference, adds 3 and misses 1 (Jaccard .714286). AE shares all 11 and adds 34 (Jaccard .244444). The edge lists and exact source hashes are in `artifacts/synthetic-sequence/bpmn-structure.json`. This checks agreement with the reference sequence. An explainer edge can also encode an earlier activity's contribution to a later prediction. Human interpretability remains untested.
+
+The four Sequence and Long-Dist-Dep SVGs were rendered in Chromium and visually inspected. Node labels and arrowheads are visible. The 45-edge and 35-edge AE layouts have intersecting arcs, so use GraphML or canonical edge JSON for exact edge inspection. Screenshots are in `artifacts/graph-qa/`.
+
+### Sequence paired explanation evaluation
+
+All nine outputs were computed for both methods on the same scheduled 2,640 prefixes, sampled with seed 404 from the full test population of 3,300. The selected Co03 candidate was seed 3005 with trainable-weight distance .207027 among five candidates. Baseline and candidate both used the full 3,300-prefix set for building global graphs, with all 137,344 and 111,848 AE contexts respectively. The evaluation reused a checked copy of the baseline ledger. Replaying it reproduced the matrices and edges, with new session telemetry. The audit verified both graph receipts, all candidate checkpoints and distances, sampled IDs, null reasons, per-method aggregates and valid paired intersections. Evidence is in `artifacts/synthetic-sequence/evaluation-paired/` with `evaluation.json`, `evaluation-audit.txt` and `candidate-audit.json`.
+
+| Metric | AE mean ± SD (valid) | BE mean ± SD (valid) | Mean AE − BE (paired valid) |
+|---|---:|---:|---:|
+| Correctness | −.774227 ± .134631 (2,392) | .049301 ± .369469 (2,158) | −.799047 (2,158) |
+| Completeness precision | .111637 ± .013629 (2,640) | .185818 ± .128661 (2,640) | −.074182 (2,640) |
+| Completeness recall | 1.000000 ± .000000 (2,640) | .906061 ± .291800 (2,640) | .093939 (2,640) |
+| Completeness F1 | .200579 ± .022155 (2,640) | .295173 ± .169606 (2,640) | −.094594 (2,640) |
+| Consistency | .966199 ± .019801 (1,944) | .560626 ± .263475 (1,944) | .405572 (1,944) |
+| Continuity | .784384 ± .130907 (2,392) | .805111 ± .115979 (2,392) | −.020727 (2,392) |
+| Contrastivity | .198419 ± .204070 (2,640) | .254989 ± .207372 (2,640) | −.056569 (2,640) |
+| Compactness rules | 6.007576 ± 3.190185 (2,640) | 6.007576 ± 3.190185 (2,640) | .000000 (2,640) |
+| Compactness RHS | 5.828341 ± 1.245948 (2,640) | 1.205007 ± .108382 (2,640) | 4.623334 (2,640) |
+
+Table 3's Sequence completeness F1 is .10 AE and .15 BE, each from one weighted aggregate row per method. Other archived Sequence outputs have at most 12 values per method. The independent measures are computed per prefix, with repeated activity sequences and the locked independent model, graph and split. The directions agree for completeness F1 and differ for consistency. The descriptive paired estimates give no significance or human interpretability result.

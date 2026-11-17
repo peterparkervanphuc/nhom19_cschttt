@@ -67,3 +67,16 @@ Reopen a completed streaming run using the command below. It checks the dataset 
 ```powershell
 & .venv/Scripts/python.exe scripts/audit_streamed_study.py --manifest artifacts/bpic13-cp-v1/E1-stream.json --prepared data/processed/bpic13-cp-v1.json --checkpoint artifacts/bpic13-cp-v1/base/checkpoint.pt --workload artifacts/bpic13-cp-v1/E1-workload-counter.json
 ```
+
+For the author-supplied synthetic benchmarks, extract the exact XES members from the archive listed in [Dataset provenance](DATASET_PROVENANCE.md) to the paths expected by `configs/datasets/synthetic-*.json`. The prepare command checks the member bytes and dataset counts. Reopen a completed explainer run with the following auditor, which requires a closed SQLite ledger.
+
+```powershell
+& .venv/Scripts/python.exe -m nhom19_process_xai prepare --config configs/datasets/synthetic-sequence.json --output data/processed/synthetic-sequence.json
+& .venv/Scripts/python.exe scripts/audit_explainer_run.py --run artifacts/synthetic-sequence/explain --prepared data/processed/synthetic-sequence.json --checkpoint artifacts/synthetic-sequence/base/checkpoint.pt
+```
+
+The paired Sequence evaluation used the command below. Its baseline graph directory was initialized from the closed standalone Sequence run by copying `BE.json`, `AE.json`, `coverage.json` and the fully checkpointed `ledger.sqlite` with hash checks. The evaluation also runs from a fresh output directory, generating its own baseline and candidate graphs. A fresh directory may take longer.
+
+```powershell
+& .venv/Scripts/python.exe -m nhom19_process_xai evaluate --prepared data/processed/synthetic-sequence.json --checkpoint artifacts/synthetic-sequence/base/checkpoint.pt --output artifacts/synthetic-sequence/evaluation-paired
+```
