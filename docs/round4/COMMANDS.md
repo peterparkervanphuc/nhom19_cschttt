@@ -89,6 +89,18 @@ Completed streaming stage receipts bind the ledger to the study manifest. The E2
 
 For a dataset whose exhaustive AE schedule exceeds available resources, append `--be-only` and use a distinct output directory. The pipeline still runs E1–E3, evaluates BE and records the AE schedules. Its completion receipt identifies the BE-only scope, and the evaluation reports paired results as unevaluated. The default mode runs both explainers and the paired evaluation.
 
+## Archived BPIC13-CP replay
+
+The reference-only CPU environment is under `artifacts/author-runtime/`. Its Conda explicit package list, pip freeze, installation report and wheel digest receipt preserve the separate runtime identity. The CPython 3.7 Windows TensorFlow wheel was fetched from PyPI in bounded ranges after the original pip transfer stalled. The verified SHA-256 is `4828c436e1b26e5bb21e650c05aa33a5705af27b3a1f52bc2af6c6a1e2ae5721`. The independent Python 3.11 environment and original repository are outside this replay's execution path. [Micromamba Windows installation](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) · [TensorFlow 2.6.5 files](https://pypi.org/project/tensorflow/2.6.5/#files)
+
+```powershell
+$runtime = Join-Path (Get-Location).Path 'artifacts/author-runtime'
+$env:CUDA_VISIBLE_DEVICES = '-1'
+$env:PYTHONNOUSERSITE = '1'
+$env:PYTHONPATH = $null
+& "$runtime/Library/bin/micromamba.exe" --no-rc run -r "$runtime/mamba-root" --prefix "$runtime/python37" python scripts/audit_author_saved_model.py --archive data/raw/author-supplement/Supplementary_Material.zip --output artifacts/author-runtime/bpic13-cp-saved-model-audit-repeat.json
+```
+
 The paired Sequence evaluation used the command below. Its baseline graph directory was initialized from the closed standalone Sequence run by copying `BE.json`, `AE.json`, `coverage.json` and the fully checkpointed `ledger.sqlite` with hash checks. The evaluation also runs from a fresh output directory, generating its own baseline and candidate graphs. A fresh directory may take longer.
 
 ```powershell

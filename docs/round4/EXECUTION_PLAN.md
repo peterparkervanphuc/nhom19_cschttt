@@ -38,4 +38,4 @@ Update PROGRESS.md after each milestone. REQUIREMENTS_TRACEABILITY.md maps all c
 3. Finish BE separately on real logs; report exhaustive AE infeasibility without substituting capped pilot graphs. Pilot Sepsis observed k=174, requiring 2^175 contexts for one prefix alone. A cap or sampled AE is a separate diagnostic/future decision, not primary compliance.
 4. Complete adapter/resource/provenance manifest audit, required figures and published-result comparison, independent review and final handoff. Compare the recovered splits and published tables to author archive evidence, and use the recovered BPMNs for structural diagnostics.
 
-Round 4 remains incomplete. The two structural diagnostics cover specific archived BPMN relations. Full twelve-log reproduction, author-runtime parity and human-interpretability validation remain unverified.
+Round 4 remains incomplete. The two structural diagnostics cover specific archived BPMN relations. The author runtime reproduced archived BPIC13-CP inference on CPU. Broader author-runtime parity, full twelve-log research coverage and human-interpretability validation remain unverified.
