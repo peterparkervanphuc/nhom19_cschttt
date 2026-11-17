@@ -2,6 +2,8 @@
 
 Run from the independent project root in PowerShell. Use a fresh output directory for each code/config revision. Existing results are protected. Resume training within an unchanged identity with --resume. An interrupted process may leave writer.lock, which requires checking the recorded PID and process state before removing only that lock.
 
+For the actual E1–E3 paper/archive comparison and its limitations, use [Reproduction comparison](REPRODUCTION_COMPARISON.md). `scripts/compare_prestudy_results.py --output artifacts/reproduction-comparison-new` reads only completed, verified study outputs and the reconciled author CSV summaries; it writes exact cross-log differences with source hashes. It also follows the local C-drive artifact locators.
+
 ```powershell
 & .venv/Scripts/python.exe -m pytest -q
 & .venv/Scripts/python.exe -m nhom19_process_xai prepare --config configs/fixture/dataset.json --output artifacts/fixture/prepared.json

@@ -143,6 +143,8 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC12_O E3-PAPER | 7,763/7,763 prefixes | Mean prefix TVD .384329, SD .309039. All records passed the streamed-study audit | `bpic12-o-v1/E3-stream.json` |
 | BPIC12_WC E3-PAPER | 18,472/18,472 prefixes | Mean prefix TVD .111464, SD .179748. All records passed the streamed-study audit | `bpic12-wc-v1/E3-stream.json` |
 | BPIC12_W E3-PAPER | 47,280/47,280 prefixes | Mean prefix TVD .087629, SD .183354. The audit also verified all 774,557 masked occurrences | `bpic12-w-v1/E3-stream.json` |
+| BPIC12_W BE | 47,280/47,280 prefixes | 15 directed edges; 2,633.80 seconds and 511,937 actual model forwards. Complete merge/pruning and relevance audit passed | `bpic12-w-v1/be-audit.json` |
+| BPIC12_W AE | 0 of approximately 2.178 × 10^40 contexts | The complete BE audit established the exact schedule, with a maximum of 132 eligible positions. No full AE graph or metrics are claimed | `bpic12-w-v1/be-only-v1/coverage.json` |
 | BPIC12_WC BE | 18,472/18,472 prefixes | 13 directed edges. Run time 496.78 seconds and 115,562 model forwards | `bpic12-wc-v1/be-audit.json` |
 | BPIC12_WC AE | 0 of 56,330,420,007,228,581,540 contexts | Full BE replay verified this exact schedule. The largest prefix has 64 eligible positions. Exhaustive execution is infeasible on the available hardware. | `bpic12-wc-v1/be-only-v1/coverage.json` |
 | BPIC12_O BE | 7,763/7,763 prefixes | Global graph with 7 nodes and 12 directed edges | `bpic12-o-v1/graphs/BE/manifest.json` |
@@ -251,6 +253,24 @@ The completed run uses 13,921 prefixes sampled with seed 404 from all 17,402 tes
 | Compactness, mean RHS size | 2.246785 ± .475583 | 13,921 / 13,921 | .19 ± .24 |
 
 The archived correctness output has zero finite values among 400 rows; NaN remains undefined. Archived completeness uses 100 weighted rows, consistency has 178 values, and continuity, contrastivity and compactness each have 400. These populations, metric procedures and checkpoints differ from the independent run. The table supplies descriptive comparisons and establishes neither improvement nor statistical significance. The candidate's exhaustive AE schedule is approximately 1.595 × 10^37 contexts, with a maximum of 121 eligible positions. AE metrics and paired method differences remain unevaluated.
+
+### Looped-AND BE-only evaluation
+
+All 8,698 seed-404 metric prefixes were evaluated. Seed 3005 had the greatest Co03 trainable-weight distance, .200975, among five candidates. The selected candidate's BE graph covered all 10,873 test prefixes and contained nine edges. The separate graph audit and all nine metric derivations, sample IDs, candidate distances and null aggregates passed. Evidence is under `artifacts/synthetic-looped-and/evaluation-be/`, including `evaluation-audit.json` and `candidate-audit.json`.
+
+| Metric | Independent BE mean ± sample SD | Valid / scheduled | Archived Table 3 BE mean ± SD |
+|---|---:|---:|---:|
+| Correctness | −.490681 ± .432146 | 8,330 / 8,698 | NaN |
+| Completeness precision | .416667 ± .124635 | 8,698 / 8,698 | .00 ± .00 |
+| Completeness recall | .916496 ± .161649 | 8,698 / 8,698 | .05 ± .02 |
+| Completeness F1 | .552843 ± .124433 | 8,698 / 8,698 | .01 ± .00 |
+| Consistency | .680694 ± .156523 | 8,646 / 8,698 | .99 ± .01 |
+| Continuity | .912234 ± .099975 | 8,330 / 8,698 | .93 ± .24 |
+| Contrastivity | .416858 ± .169440 | 8,698 / 8,698 | .40 ± .21 |
+| Compactness, rules | 4.570936 ± 1.048591 | 8,698 / 8,698 | 4.00 ± .00 |
+| Compactness, mean RHS size | 2.024431 ± .094839 | 8,698 / 8,698 | 1.00 ± .00 |
+
+The archive has no finite correctness values among 400 rows, 100 weighted completeness rows and only 41 consistency values. The candidate's approximately 1.392 × 10^27 AE contexts remain unexecuted. The differing cohorts and metric procedures prevent a matched-protocol reproduction claim or a significance claim.
 
 ### Table 3 archive reconciliation
 
