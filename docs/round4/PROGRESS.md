@@ -98,3 +98,5 @@ BPIC12_WC E3 completed the remaining 2,893 prefixes, then passed independent ver
 Helpdesk completed E2 on all 49,830 arm-prefix pairs and passed the ledger audit. Its paired explanation evaluation passed both exhaustive graph audits and recomputation of the nine reported aggregates on the valid paired intersections. Figures and the two baseline graph SVGs were rendered. The corresponding exact artifacts are in `artifacts/helpdesk-v1/` and `artifacts/figures/helpdesk-v1/`.
 
 Looped-AND E3-PAPER completed 10,873 prefixes and passed the streamed record audit. The other synthetic E3 run, Complex-Model, preserved its first 1,803 records at the RAM floor and resumed from that count.
+
+All twelve archived SavedModels were replayed on CPU for both target conventions. Ten runs matched every stored aggregate under the last-prefix convention. Helpdesk and Sepsis differed under both serving-signature and Keras loading despite loader agreement on prediction counts and numerical aggregates. The complete per-log receipts and aggregate audit are in `artifacts/author-runtime/`.

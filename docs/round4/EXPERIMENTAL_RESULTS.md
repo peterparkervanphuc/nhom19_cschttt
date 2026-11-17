@@ -60,7 +60,28 @@ The archived GPU configuration selects `test_pref.xes`. The pinned sampler write
 
 Every one of the 1,486 archived prefix and suffix pairs was reconstructed from `test.xes` and its sample IDs. Using the code's last-prefix-event label makes 447 model inputs empty before padding. The label counts shift from 800 Accepted, 465 Completed, 216 Queued and 5 Unmatched with the first suffix event to 1,236 Accepted, 18 Completed, 227 Queued and 5 Unmatched with the last prefix event. An always-Accepted predictor on the last-prefix labels reproduces all ten archived metrics within `1e-15`, including the three shown in Table 2. On the correct next-event labels of those same archived samples, its accuracy is .538358 and weighted F1 is .376804. This reconstruction checks the published aggregates without executing the archived checkpoint. The source hashes, supports and exact metrics are in `data/raw/author-supplement/bpic13-cp-target-audit.json`.
 
-The subsequent CPU replay loaded the actual archived TensorFlow SavedModel with its archived vocabulary and 35-token prepadding. It predicted Accepted for all 1,486 samples under both input conventions. All ten stored aggregates matched to within `1e-12` when the last prefix event was the target. Passing the full prefix and using the first suffix event instead gave precision .289829, accuracy .538358 and weighted F1 .376804. The result binds the archived model files, input archive, runtime versions and predictions counts in `artifacts/author-runtime/bpic13-cp-saved-model-audit-v2.json`. This verifies archived CPU inference on this cohort. The original GPU training and predictions from other archived checkpoints remain separate tasks.
+The subsequent CPU replay loaded the actual archived TensorFlow SavedModel with its archived vocabulary and 35-token prepadding. It predicted Accepted for all 1,486 samples under both input conventions. All ten stored aggregates matched to within `1e-12` when the last prefix event was the target. Passing the full prefix and using the first suffix event instead gave precision .289829, accuracy .538358 and weighted F1 .376804. The result binds the archived model files, input archive, runtime versions and prediction counts in `artifacts/author-runtime/bpic13-cp-saved-model-audit-v2.json`. This verifies archived CPU inference on this cohort.
+
+### CPU replay of all twelve Table 2 checkpoints
+
+The isolated Python 3.7.12, TensorFlow 2.6.5 and Keras 2.6.0 runtime executed all twelve archived SavedModels. The replay verified the configured prefix-file path and exact population. For seven logs, the next-event target came from the suffix trace with the same sample ID. For the other five, the replay checked each `Case_i_j` prefix against the archived `test.xes` case at position `i` and took the label at index `j`. In the table, each pair is accuracy and weighted F1. The agreement column checks all ten archived aggregates to tolerance `1e-12`.
+
+| Log | Archived prefixes | Archive | Last-prefix target replay | Next-event target replay | Stored aggregates |
+|---|---:|---:|---:|---:|---|
+| BPIC12 | 75,104 | .834070 / .801503 | .834070 / .801503 | .815616 / .778804 | 10 match |
+| BPIC12_O | 7,681 | .927614 / .931827 | .927614 / .931827 | .825283 / .798047 | 10 match |
+| BPIC12_W | 48,335 | .868584 / .870400 | .868584 / .870400 | .895935 / .895250 | 10 match |
+| BPIC12_WC | 18,923 | .781113 / .752978 | .781113 / .752978 | .789674 / .772148 | 10 match |
+| BPIC13_CP | 1,486 | .831763 / .755370 | .831763 / .755370 | .538358 / .376804 | 10 match |
+| BPIC13-I | 17,580 | .687770 / .569349 | .687770 / .569349 | .674801 / .591128 | 10 match |
+| Helpdesk | 5,025 | .786269 / .756574 | .787861 / .758117 | .798806 / .753561 | Mismatch |
+| Sepsis | 4,154 | .513722 / .461106 | .396004 / .304944 | .336302 / .257073 | Mismatch |
+| Complex-Model | 21,462 | .566862 / .506150 | .566862 / .506150 | .566862 / .506570 | 10 match |
+| Long-Dist-Dep | 1,944 | .920267 / .894287 | .920267 / .894287 | 1.000000 / 1.000000 | 10 match |
+| Looped-AND | 10,941 | .648295 / .642137 | .648295 / .642137 | .639704 / .615844 | 10 match |
+| Sequence | 3,300 | 1.000000 / 1.000000 | 1.000000 / 1.000000 | 1.000000 / 1.000000 | 10 match |
+
+The Helpdesk and Sepsis differences persisted when loading with `tf.keras.models.load_model(compile=False)` and calling the model with `training=False`. Within each of those logs, the Keras and serving-signature routes agree on both sets of metrics and predicted-class counts. The cause of their discrepancy from the stored aggregates remains unresolved. The next-event replay uses the archived checkpoints and archived sample populations. Exact member paths, checkpoint hashes, counts, loader receipts and metrics are under `artifacts/author-runtime/table2-replays/`. The consolidated comparison is `artifacts/author-runtime/table2-replay-comparison.json`.
 
 All twelve archived Table 2 configurations point to `test_pref.xes`. All twelve prefix files parse, and multiplying their row counts by the archived accuracies gives an integer within floating-point tolerance in every case. All prefix IDs and sequences align with the indexed `test.xes` cases for eleven logs. The BPIC12_WC archived `test.xes` is truncated before its closing log tag, while both prefix and suffix XES files parse and share all 18,923 sample IDs. This evidence is compatible with the configured evaluation populations. The comparison does not recover the models' row-level predictions. The local independent BPIC12_WC run uses the verified 4TU file and its own filters. Exact archive members, counts and the XML error are in `data/raw/author-supplement/table2-target-population-audit.json` and `bpic12-wc-archive-test-parse-audit.json` in the same directory.
 
