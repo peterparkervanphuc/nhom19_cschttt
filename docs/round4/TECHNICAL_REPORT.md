@@ -2,7 +2,7 @@
 
 Status: in progress. This report records verified Round 4 evidence and the remaining acceptance criteria as of 2026-11-17.
 
-The independent Python package implements next-activity prediction, the three attention experiments, BE and AE, and predictive and explanation metrics. The integrated command has executed every stage on the committed fixture. The author-supplied Sequence and Long-Dist-Dep logs completed E1–E3 and exhaustive BE/AE. Sequence also completed all nine paired explanation outputs and a BPMN structural comparison. The real-log results and outstanding workloads are below.
+The independent Python package implements next-activity prediction, the three attention experiments, BE and AE, and predictive and explanation metrics. The integrated command has executed every stage on the committed fixture. Helpdesk and the author-supplied Sequence and Long-Dist-Dep logs completed E1–E3, exhaustive BE/AE and all nine paired explanation outputs. Both synthetic logs also have structural comparisons against their archived BPMNs.
 
 ## Architecture and research fidelity
 
@@ -46,18 +46,37 @@ The isolated author replay uses the pinned Python 3.7.12, TensorFlow 2.6.5 and K
 
 The [experimental results record](EXPERIMENTAL_RESULTS.md) gives artifact paths, denominators, exact values and limitations. Model fidelity, alignment to a known process model and human interpretability are separate claims. A baseline accuracy difference does not establish any of the three.
 
+### Coverage by benchmark
+
+All twelve logs have audited next-activity predictions. A workload count describes the planned population. Only a completed run earns a verification entry.
+
+| Log | E1 | E2-FC | E3-PAPER | BE | Exhaustive AE and evaluation |
+|---|---|---|---|---|---|
+| BPIC12 | ≥2,440,580,925 variants, storage-limited | Pending | Pending | Pending | Pending BE workload check |
+| BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 scheduled contexts |
+| BPIC12_W | Resumable run, 1,334,973 variants scheduled | Pending | Pending | Pending | Pending BE workload check |
+| BPIC12_WC | Verified | Pending | Verified | Pending | Pending BE workload check |
+| BPIC13_CP | Verified | Verified | Verified | Verified | 809,189,178 scheduled contexts. BE-only evaluation verified. |
+| BPIC13 incidents | Verified | Pending | Verified | Verified | Approximately 1.595 × 10^37 scheduled contexts |
+| Helpdesk | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
+| Sepsis | 15,000 of 2,425,371,457 variants persisted | Resumable run | Verified | Verified | Approximately 9.578 × 10^52 scheduled contexts |
+| Complex-Model | 15,755,268,423 variants scheduled | Pending | Verified | Verified | Approximately 4.058 × 10^20 scheduled contexts |
+| Long-Dist-Dep | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
+| Looped-AND | Verified | Pending | Verified | Verified | Approximately 1.219 × 10^27 scheduled contexts |
+| Sequence | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
+
 ## Acceptance and handoff
 
 | Requirement | Status | Evidence or remaining check |
 |---|---|---|
 | Independent Transformer and three attention methods | PASS | Unit tests and completed research runs on the fixture and BPIC13-CP |
 | Independent BE and AE | PASS for implementation | Full fixture graph/matrix coverage and resumption tests. Real exhaustive coverage is listed separately below. |
-| Predictive and XAI evaluation, integrated workflow | PASS for fixtures and two synthetic benchmarks | Predictive evaluation on official logs, all nine paired XAI outputs on the fixture, Sequence and Long-Dist-Dep, and directed export with artifact receipts |
+| Predictive and XAI evaluation, integrated workflow | PASS for implementation and verified runs | Predictive evaluation on all twelve logs. All nine paired XAI outputs on the fixture, Helpdesk, Sequence and Long-Dist-Dep. Directed export with artifact receipts. |
 | Reference and baseline boundaries | PASS | Read-only author repository. Sampling diagnostics are separate from primary schedules. |
 | Environment and dependency recreation | PASS | CPU lock installed in a second uv Python 3.11.15 environment, tests and `pip check` verified |
 | Data pipeline and twelve-log scope | PASS for the input gate | Twelve log variants have verified input provenance and counts. The author archive supplies the four synthetic XES files and reference BPMNs. Full pipeline execution remains tracked separately. |
 | Tests and end-to-end checks | PASS | 56 tests in `artifacts/s0/round4-streaming-pipeline-suite.xml`. Complete paired and BE-only fixture scopes, interrupted E1 recovery, trace-wise filter audit, and checksum checks on streamed experiments. |
-| Full feasible real experiments and comparison | PARTIAL | All twelve predictive baselines, several complete attention studies, two paired synthetic XAI benchmarks, paired real-log Helpdesk XAI and the archived BPIC13-CP inference replay are verified. Additional feasible benchmark runs remain open. |
+| Full feasible experiments and comparison | PARTIAL | The coverage table tracks open independent runs. Archived CPU inference was replayed on twelve logs. Ten match the stored metrics, with unresolved discrepancies for Helpdesk and Sepsis. |
 | Full exhaustive AE on Sepsis | BLOCKED for execution | A single prefix has 174 eligible positions. Adding ordinary local or cloud resources cannot make this schedule feasible. |
 | Commands, configuration, seeds, checkpoints | PASS for reported runs | [Commands](COMMANDS.md), versioned configs, source hashes and sealed run receipts |
 | Plan, progress, traceability and experimental record | PASS | Maintained in `docs/round4/` |
