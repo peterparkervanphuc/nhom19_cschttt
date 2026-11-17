@@ -97,3 +97,10 @@ def test_be_only_pipeline_report_keeps_ae_outside_completed_scope(tmp_path):
     assert not (output / "graphs/AE").exists()
     with pytest.raises(ValueError, match="Pipeline resume identity differs"):
         run_pipeline(dataset, training, output, streaming=True)
+    for folder in ("baseline-graphs", "candidate-graphs"):
+        ledger = Path("evaluation") / folder / "ledger.sqlite"
+        assert str(ledger) in result["completed"]["evaluate"]["files"]
+    with (output / "evaluation/candidate-graphs/ledger.sqlite").open("ab") as database:
+        database.write(b"corruption")
+    with pytest.raises(ValueError, match="Stage receipt invalid: evaluate"):
+        run_pipeline(dataset, training, output, streaming=True, be_only=True)

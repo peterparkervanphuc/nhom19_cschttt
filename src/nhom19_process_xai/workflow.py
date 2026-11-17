@@ -29,6 +29,8 @@ def _stage_files(name: str, artifact: Path, directory: Path, streaming: bool) ->
     elif name == "evaluate":
         files.update((directory / "evaluation").rglob("*.json"))
         files.update((directory / "evaluation").rglob("checkpoint.pt"))
+        for folder in ("baseline-graphs", "candidate-graphs"):
+            files.add(directory / "evaluation" / folder / "ledger.sqlite")
     elif name.startswith("graph-"):
         manifest = read_sealed(artifact)
         for filename, digest in manifest["files"].items():
