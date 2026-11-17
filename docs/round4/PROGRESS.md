@@ -94,3 +94,5 @@ Looped-AND E1 completed its audited schedule of 734,926 variants. BPIC12_WC E3 p
 Full BPIC12 completed ten epochs and passed the independent audit of all 73,742 test predictions. All twelve predictive baselines are now verified. The audited metrics, data and checkpoint hashes are in `artifacts/bpic12-v1/predictive-audit.json`.
 
 BPIC12_WC E3 completed the remaining 2,893 prefixes, then passed independent verification across all 18,472 records. Helpdesk E2 and Looped-AND E3 began with the current independent package. Helpdesk paired XAI is also in progress, with its baseline AE complete on 107,602 contexts.
+
+Helpdesk completed E2 on all 49,830 arm-prefix pairs and passed the ledger audit. Its paired explanation evaluation passed both exhaustive graph audits and recomputation of the nine reported aggregates on the valid paired intersections. Figures and the two baseline graph SVGs were rendered. The corresponding exact artifacts are in `artifacts/helpdesk-v1/` and `artifacts/figures/helpdesk-v1/`.

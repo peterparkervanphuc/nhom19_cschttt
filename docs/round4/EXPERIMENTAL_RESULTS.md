@@ -98,6 +98,7 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC12_O AE | 0/113,657,644 contexts | Exact workload established from the full BE pass | `bpic12-o-v1/be-only-v1/coverage.json` |
 | BPIC12_WC E1 | 18,472/18,472 prefixes, 280,907 variants | Mean tau-b .780294, SD .377938, 13,370 valid and 5,102 undefined | `bpic12-wc-v1/E1-stream.json` |
 | Helpdesk E1 | 4,983/4,983 prefixes, 390,254 variants | Mean tau-b .903136, SD .236441, 3,497 valid and 1,486 undefined | `helpdesk-v1/E1-stream.json` |
+| Helpdesk E2-FC | 49,830/49,830 paired records | Mean JSD across each model's cohort ranged .022445–.029539 for BASE and .078434–.078435 for FC. Mean prediction TVD ranged .026770–.072433 and .027586–.056758, respectively. | `helpdesk-v1/E2-stream.json` |
 | Helpdesk E3 | 4,983/4,983 prefixes | Mean prefix TVD .310606, SD .227002 | `helpdesk-v1/E3-stream.json` |
 
 BPIC13 incidents E1 stopped after 236,445 variants at the 240-second session limit. The saved source from commit `e67565b` was used to resume. The second session added 67,910 variants in 57.25 seconds. The final ledger SHA-256, checkpoint SHA-256, per-prefix SQLite row counts and exact schedule count agree with the manifest.
@@ -113,6 +114,26 @@ Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second
 BPIC12_WC E3 completed 7,185, 8,394 and 2,893 new records across three sessions. The first session stopped at the available-RAM floor and the second at its wall-time quota. The final session used the identical source snapshot and completed all remaining units. The independent ledger audit verified coverage and aggregation from the 18,472 records in `artifacts/bpic12-wc-v1/e3-record-audit.json`.
 
 The BPIC13-CP discrepancy was also probed against author commit `494b315a555e713bdd61f0edd7d033c31d5850bf`. `processtransformer/ml/prepare/splitter.py` lines 34–39 and 111–119 shuffle case IDs in log order and take the first floor(0.7 × N) cases for training. Applying that procedure with seed 42 to the acquired log yields the same 447 test cases as the independent sorted-ID protocol. Only 129 of those cases occur in the test XES recovered from the author archive. A separate diagnostic kept the local split, architecture, Adam settings and training seed, and used 5 epochs and batch 50. Accuracy was .559720 and weighted F1 was .517447 on all 1,574 prefixes (`artifacts/bpic13-cp-v1/source-schedule/predictions.json`). Both evaluation population and target alignment differ from the archive.
+
+## Helpdesk paired explanation evaluation
+
+The official-data Helpdesk run completed E1–E3 and the full paired BE–AE evaluation. E2 stopped at the available-RAM floor after 40,492 records. The second session reused the same source and checkpoints and completed the final 9,338 records. All ten arm cohorts and their SQLite receipts were verified. The E1–E3 plots and ten-seed CSV are in `artifacts/figures/helpdesk-v1/`.
+
+The baseline and chosen candidate were both explained on all 4,983 test prefixes. The Co03 schedule selected seed 3001, with weight distance .219357, from five verified candidate checkpoints. The graph audit replayed 107,602 baseline and 138,990 candidate AE contexts and regenerated both AE matrices from the sealed votes. The baseline BE and AE graphs contain 19 and 18 directed edges. Both SVGs were rendered and visually inspected. The separate metric cohort contains 3,986 prefixes selected with seed 404, with results paired on each output's valid intersection.
+
+| Metric | Valid pairs | BE mean | AE mean | AE − BE |
+|---|---:|---:|---:|---:|
+| Correctness | 2,784 | .840080 | −.137458 | −.977538 |
+| Completeness precision | 3,986 | .481276 | .313421 | −.167855 |
+| Completeness recall | 3,986 | .868038 | .999875 | .131836 |
+| Completeness F1 | 3,986 | .561468 | .466782 | −.094686 |
+| Consistency | 3,958 | .640121 | .611902 | −.028219 |
+| Continuity | 2,874 | .594932 | .645188 | .050256 |
+| Contrastivity | 3,981 | .668752 | .538978 | −.129774 |
+| Compactness rules | 3,986 | 2.217260 | 2.213748 | −.003512 |
+| Compactness RHS | 3,986 | 2.339641 | 4.386436 | 2.046795 |
+
+On this cohort, AE's recall is higher and BE's precision and F1 are higher. The published Helpdesk rows also favor BE on precision and F1, but give AE a lower recall (.25 versus .30) and a positive correctness mean (.73 versus .91). Those archived aggregates have different populations and settings, including 100 weighted completeness rows per method and 390/396 valid correctness records for AE. The paired differences above are descriptive and use the independent baseline, split and locked metric definitions. Evidence includes the two graph audit receipts and `artifacts/helpdesk-v1/evaluation-paired/evaluation-audit.json`.
 
 ## BPIC13-CP BE explanation evaluation
 
