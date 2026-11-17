@@ -4,11 +4,24 @@ import sqlite3
 
 import pytest
 
+from nhom19_process_xai.experiments import streaming
 from nhom19_process_xai.artifacts import read_sealed
 from nhom19_process_xai.data.preparation import prepare_file
 from nhom19_process_xai.experiments.streaming import run_streaming_study
 from nhom19_process_xai.experiments.studies import run_study
 from nhom19_process_xai.model.training import TrainingConfig, train
+
+
+@pytest.mark.parametrize("name", ["E2", "E3"])
+@pytest.mark.parametrize("quota", [float("nan"), float("inf"), -float("inf")])
+def test_nonfinite_wall_quota_fails_before_loading_model(tmp_path, monkeypatch, name, quota):
+    def unexpected_load(*args):
+        pytest.fail("Invalid wall quota reached model loading")
+
+    monkeypatch.setattr(streaming, "Predictor", unexpected_load)
+    with pytest.raises(ValueError, match="Invalid profile or execution quota"):
+        run_streaming_study(name, {}, tmp_path / "missing.pt", tmp_path / "study.json", max_seconds=quota)
+    assert list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.parametrize("name", ["E2", "E3"])

@@ -3,6 +3,7 @@
 from contextlib import closing
 from datetime import datetime, timezone
 import json
+import math
 from pathlib import Path
 import sqlite3
 import time
@@ -29,7 +30,8 @@ def run_streaming_study(name: str, prepared: dict, checkpoint: Path, output: Pat
     if name not in profiles:
         raise ValueError("Streaming runner supports E2 and E3")
     profile = profile or defaults[name]
-    if profile not in profiles[name] or max_seconds <= 0 or (stop_after_units is not None and stop_after_units < 1):
+    if (profile not in profiles[name] or not math.isfinite(max_seconds) or max_seconds <= 0
+            or (stop_after_units is not None and stop_after_units < 1)):
         raise ValueError("Invalid profile or execution quota")
     if output.exists():
         raise FileExistsError("Completed study output already exists")
