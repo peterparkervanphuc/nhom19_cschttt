@@ -53,7 +53,7 @@ All twelve logs have audited next-activity predictions. A workload count describ
 | Log | E1 | E2-FC | E3-PAPER | BE | Exhaustive AE and evaluation |
 |---|---|---|---|---|---|
 | BPIC12 | ≥2,440,580,925 variants, storage-limited | Pending | Pending | Pending | Pending BE workload check |
-| BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 contexts. At least 47.5 GB of context text, storage-limited. |
+| BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 contexts. At least 47.5 GB of context text, storage-limited. BE-only evaluation verified. |
 | BPIC12_W | Verified, 1,334,973 variants | Pending | Resumable run | Pending | Pending BE workload check |
 | BPIC12_WC | Verified | Pending | Verified | Verified | Approximately 5.633 × 10^19 scheduled contexts |
 | BPIC13_CP | Verified | Verified | Verified | Verified | 809,189,178 contexts. At least 241 GB of context text, storage-limited. BE-only evaluation verified. |
