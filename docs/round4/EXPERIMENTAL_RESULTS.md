@@ -190,3 +190,21 @@ All nine outputs were computed for both methods on the same scheduled 2,640 pref
 | Compactness RHS | 5.828341 ± 1.245948 (2,640) | 1.205007 ± .108382 (2,640) | 4.623334 (2,640) |
 
 Table 3's Sequence completeness F1 is .10 AE and .15 BE, each from one weighted aggregate row per method. Other archived Sequence outputs have at most 12 values per method. The independent measures are computed per prefix, with repeated activity sequences and the locked independent model, graph and split. The directions agree for completeness F1 and differ for consistency. The descriptive paired estimates give no significance or human interpretability result.
+
+### Long-Dist-Dep paired evaluation and BPMN branch relations
+
+The same paired protocol scheduled 1,565 of the 1,957 test prefixes. Seed 3003 had the greatest distance (.190390) among the five candidates. The baseline and candidate both completed full BE and AE, with 67,290 and 70,224 AE contexts respectively. Replayed baseline matrices, candidate context coverage, checkpoint receipts and every metric's valid intersection passed the audits in `artifacts/synthetic-long-dist-dep/evaluation-paired/`.
+
+| Metric | AE mean ± SD (valid) | BE mean ± SD (valid) | Mean AE − BE (paired valid) |
+|---|---:|---:|---:|
+| Correctness | −.067322 ± .617188 (1,322) | −.409638 ± .464575 (1,322) | .342316 (1,322) |
+| Completeness precision | .144409 ± .045285 (1,565) | .225119 ± .148779 (1,565) | −.080710 (1,565) |
+| Completeness recall | 1.000000 ± .000000 (1,565) | .844728 ± .362279 (1,565) | .155272 (1,565) |
+| Completeness F1 | .249826 ± .064405 (1,565) | .343773 ± .197638 (1,565) | −.093947 (1,565) |
+| Consistency | .920365 ± .101513 (1,209) | .290109 ± .177200 (1,209) | .630256 (1,209) |
+| Continuity | .604513 ± .274281 (1,565) | .558685 ± .294891 (1,565) | .045828 (1,565) |
+| Contrastivity | .351526 ± .199944 (1,565) | .344284 ± .148823 (1,565) | .007242 (1,565) |
+| Compactness rules | 3.765495 ± 1.901160 (1,565) | 3.765495 ± 1.901160 (1,565) | .000000 (1,565) |
+| Compactness RHS | 5.056966 ± .573565 (1,565) | 1.319013 ± .263617 (1,565) | 3.737954 (1,565) |
+
+The BPMN's parallel-gateway paths imply two selected long-range branch relations, `A → D` and `B → E`. All 157 held-out traces ending with a branch activity follow these two relations, with 74 `A … D` and 83 `B … E`. The other 143 held-out traces end at `Z`. AE contains both selected edges and BE contains neither. Neither method contains the cross-branch pairs `A → E` and `B → D`. The diagnostic checks these selected relations and retains the event counts and graph/BPMN hashes in `artifacts/synthetic-long-dist-dep/bpmn-long-range.json`.
