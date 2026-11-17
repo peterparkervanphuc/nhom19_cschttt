@@ -96,3 +96,5 @@ Full BPIC12 completed ten epochs and passed the independent audit of all 73,742 
 BPIC12_WC E3 completed the remaining 2,893 prefixes, then passed independent verification across all 18,472 records. Helpdesk E2 and Looped-AND E3 began with the current independent package. Helpdesk paired XAI is also in progress, with its baseline AE complete on 107,602 contexts.
 
 Helpdesk completed E2 on all 49,830 arm-prefix pairs and passed the ledger audit. Its paired explanation evaluation passed both exhaustive graph audits and recomputation of the nine reported aggregates on the valid paired intersections. Figures and the two baseline graph SVGs were rendered. The corresponding exact artifacts are in `artifacts/helpdesk-v1/` and `artifacts/figures/helpdesk-v1/`.
+
+Looped-AND E3-PAPER completed 10,873 prefixes and passed the streamed record audit. The other synthetic E3 run, Complex-Model, preserved its first 1,803 records at the RAM floor and resumed from that count.
