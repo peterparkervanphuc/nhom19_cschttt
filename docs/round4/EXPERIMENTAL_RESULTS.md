@@ -285,6 +285,15 @@ The pinned supplement contains 96 CSVs for E1–E3 across twelve logs. The audit
 
 Archived E1 median tau is .639763 for Helpdesk, .680000 for Looped-AND and .677296 for Sequence. The archived E2 mean prediction TVD across the five `seed` models is .00002087 on Sequence and .00013651 on Long-Dist-Dep. The independent studies also found small mean prediction changes for these two logs. The pinned study runner builds a distinct-sequence pool and samples indices with replacement, with an upper limit of 2,000 draws. The archived CSVs omit the sampled prefix IDs. The independent protocol preserves every scheduled test-prefix ID and uses a frozen-constant arm, so differences between the two sets of statistics remain descriptive. The archive receipt is `artifacts/author-runtime/prestudy-archive-audit.json`. [Pinned sampling source](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/processtransformer/xai/metrics/run_through_nn_metrics.py#L118-L130)
 
+For E3, the archive records one TVD per masked occurrence. The independent primary summary weights prefixes equally. A separate audit matched every audited masking position to its prepared occurrence ID and recomputed each TVD from the two stored prediction vectors. Pooling these TVDs gives the same unit of aggregation as the archive, while the cohort and masking differences remain. The separate values are in each log's `e3-occurrence-audit.json`. [Pinned E3 aggregation](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/processtransformer/xai/metrics/attn_masking.py#L32-L58)
+
+| Log | Independent masked occurrences | Independent pooled median TVD | Archived masked occurrences | Archived pooled median TVD |
+|---|---:|---:|---:|---:|
+| Helpdesk | 12,547 | .129620 | 2,918 | .056731 |
+| Sequence | 19,800 | .00000645 | 61 | .0000286 |
+| Long-Dist-Dep | 7,399 | .000238 | 53 | .001476 |
+| Looped-AND | 164,829 | .009520 | 52,825 | .000089 |
+
 ### Sequence BPMN comparison
 
 The archived `longer_sequence.bpmn` contains 12 tasks and no gateways. The diagnostic maps each BPMN name `X` to the XES activity label `Activity X` and takes the 11 direct task-to-task sequence flows. After excluding the start and end events, those flows match the complete observed activity sequence in both independent splits. BE shares 10 edges with the reference, adds 3 and misses 1 (Jaccard .714286). AE shares all 11 and adds 34 (Jaccard .244444). The edge lists and exact source hashes are in `artifacts/synthetic-sequence/bpmn-structure.json`. This checks agreement with the reference sequence. An explainer edge can also encode an earlier activity's contribution to a later prediction. Human interpretability remains untested.
