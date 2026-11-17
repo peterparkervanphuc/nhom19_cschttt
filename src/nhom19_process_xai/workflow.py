@@ -77,7 +77,7 @@ def _validate_streamed_study(name: str, payload: dict, directory: Path, prepared
 
 
 def _validate_publication(name: str, artifact: Path, directory: Path, config: dict,
-                          raw_hash: str, streaming: bool) -> None:
+                          raw_hash: str, streaming: bool, methods: tuple[str, ...]) -> None:
     """Validate an orphaned atomic output against the persisted stage intent.
 
     Recovery is only allowed for the active stage, with unchanged input/source
@@ -122,20 +122,26 @@ def _validate_publication(name: str, artifact: Path, directory: Path, config: di
                 if any(row["modified_checkpoint"] != modified.checkpoint_id for row in pair["records"]):
                     raise ValueError("E2 model publication mismatch")
     elif name == "evaluate":
+        be_only = methods == ("BE",)
+        if (payload["evaluation_mode"] != ("be-only" if be_only else "paired")
+                or payload["paired_status"] != ("not_evaluated" if be_only else "completed")
+                or set(payload["methods"]) != set(methods)):
+            raise ValueError("Evaluation publication mode mismatch")
         for candidate in payload["candidates"]:
             path = directory / "evaluation/candidates" / str(candidate["seed"]) / "checkpoint.pt"
             if file_hash(path) != candidate["checkpoint_sha256"]:
                 raise ValueError("Evaluation candidate checksum mismatch")
         for folder, checkpoint_id in [("baseline-graphs", predictor.checkpoint_id),
                                       ("candidate-graphs", payload["selected"]["checkpoint_sha256"])]:
-            for method in ("BE", "AE"):
+            for method in methods:
                 graph = read_sealed(directory / "evaluation" / folder / f"{method}.json")
                 if graph["status"] != "completed" or graph["identity"]["checkpoint"] != checkpoint_id:
                     raise ValueError("Evaluation graph publication mismatch")
 
 
 def run_pipeline(dataset_config: Path, training_config: Path, directory: Path, *,
-                 streaming: bool = False, study_max_seconds: float = 3600) -> dict:
+                 streaming: bool = False, study_max_seconds: float = 3600,
+                 be_only: bool = False) -> dict:
     from .__main__ import main
     if not math.isfinite(study_max_seconds) or study_max_seconds <= 0:
         raise ValueError("Study wall time quota must be finite and positive")
@@ -147,6 +153,8 @@ def run_pipeline(dataset_config: Path, training_config: Path, directory: Path, *
                 "raw_data": raw_hash, "source": source_hash(), "schema_version": 2}
     if streaming:
         identity["streaming_studies"] = True
+    if be_only:
+        identity["evaluation_mode"] = "be-only"
     progress_path = directory / "pipeline.json"
     prepared = directory / "prepared.json"
     checkpoint = directory / "base/checkpoint.pt"
@@ -162,9 +170,12 @@ def run_pipeline(dataset_config: Path, training_config: Path, directory: Path, *
         if streaming:
             command.extend(["--streaming", "--max-seconds", str(study_max_seconds)])
         stages.append((name, command, output))
-    stages.append(("evaluate", ["evaluate", *prediction_args, "--output", str(directory / "evaluation")],
-                   directory / "evaluation/evaluation.json"))
-    for method in ("BE", "AE"):
+    evaluate = ["evaluate", *prediction_args, "--output", str(directory / "evaluation")]
+    methods = ("BE",) if be_only else ("BE", "AE")
+    if be_only:
+        evaluate.append("--be-only")
+    stages.append(("evaluate", evaluate, directory / "evaluation/evaluation.json"))
+    for method in methods:
         folder = directory / "graphs" / method
         stages.append(("graph-" + method, ["graph", "--explanation", str(directory / "evaluation/baseline-graphs" / f"{method}.json"),
                                            "--output", str(folder)], folder / "manifest.json"))
@@ -204,7 +215,7 @@ def run_pipeline(dataset_config: Path, training_config: Path, directory: Path, *
                 write_json(progress_path, seal(progress))
                 return progress
             if name != "train":
-                _validate_publication(name, artifact, directory, config, raw_hash, streaming)
+                _validate_publication(name, artifact, directory, config, raw_hash, streaming, methods)
             files = _stage_files(name, artifact, directory, streaming)
             progress["completed"][name] = {"artifact": str(artifact.relative_to(directory)),
                                             "sha256": file_hash(artifact), "command": command,

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from nhom19_process_xai import __main__ as cli
+from nhom19_process_xai.artifacts import read_sealed
 from nhom19_process_xai.experiments import e1_streaming
 from nhom19_process_xai.workflow import run_pipeline
 
@@ -75,4 +76,24 @@ def test_streaming_pipeline_resumes_and_checks_ledger_receipts(tmp_path, monkeyp
     with (output / "E3-run/records.sqlite").open("ab") as database:
         database.write(b"corruption")
     with pytest.raises(ValueError, match="Stage receipt invalid: E3"):
+        run_pipeline(dataset, training, output, streaming=True)
+
+
+def test_be_only_pipeline_report_keeps_ae_outside_completed_scope(tmp_path):
+    dataset = Path(__file__).parents[1] / "configs/fixture/dataset.json"
+    training = tmp_path / "training.json"
+    training.write_text(json.dumps({"epochs": 1}), encoding="utf-8")
+    output = tmp_path / "pipeline"
+    result = run_pipeline(dataset, training, output, streaming=True, be_only=True)
+    assert result["status"] == "completed"
+    assert result["identity"]["evaluation_mode"] == "be-only"
+    evaluation = read_sealed(output / "evaluation/evaluation.json")
+    assert evaluation["paired_status"] == "not_evaluated"
+    assert evaluation["paired_AE_minus_BE"] is None
+    assert set(evaluation["methods"]) == {"BE"}
+    assert evaluation["graph_runs"]["baseline-graphs"]["ae_expected"] > 0
+    assert evaluation["graph_runs"]["baseline-graphs"]["ae_completed"] == 0
+    assert (output / "graphs/BE/graph.graphml").exists()
+    assert not (output / "graphs/AE").exists()
+    with pytest.raises(ValueError, match="Pipeline resume identity differs"):
         run_pipeline(dataset, training, output, streaming=True)

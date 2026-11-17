@@ -87,6 +87,8 @@ Use the pipeline's streaming mode to persist E1–E3 units in SQLite. If a study
 
 Completed streaming stage receipts bind the ledger to the study manifest. The E2 receipt also includes all ten arm checkpoints and training manifests.
 
+For a dataset whose exhaustive AE schedule exceeds available resources, append `--be-only` and use a distinct output directory. The pipeline still runs E1–E3, evaluates BE and records the AE schedules. Its completion receipt identifies the BE-only scope, and the evaluation reports paired results as unevaluated. The default mode runs both explainers and the paired evaluation.
+
 The paired Sequence evaluation used the command below. Its baseline graph directory was initialized from the closed standalone Sequence run by copying `BE.json`, `AE.json`, `coverage.json` and the fully checkpointed `ledger.sqlite` with hash checks. The evaluation also runs from a fresh output directory, generating its own baseline and candidate graphs. A fresh directory may take longer.
 
 ```powershell
