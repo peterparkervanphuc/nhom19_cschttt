@@ -108,11 +108,26 @@ The BE-only evaluation completed all 1,259 scheduled metric prefixes (floor of 8
 | Compactness rules | 1.585385 | .573370 | 1,259 / 1,259 | 2.16 ± .53 |
 | Compactness RHS | 1.737490 | .256072 | 1,259 / 1,259 | .60 ± .20 |
 
-The published BE column comes from the supplied QA-corrected evidence matrix, sheet “Bảng 3,” BPIC13_CP rows 8, 20, 32, 44, 56, 68, 80, 92 and 104, which reference printed page 34. Comparison is descriptive. The correctness direction differs, and the independent contrastivity mean has 480 undefined prefixes. The pinned author file `processtransformer/xai/metrics/contrastivity_co05.py` (lines 74, 95–107) defaults to cosine distance .25 and returns zero when no eligible variant survives. The independent protocol uses cosine similarity below .8 and leaves an empty far group undefined. That difference can affect the mean; the historical settings and denominators used to generate Table 3 remain unverified. [Paper](https://link.springer.com/article/10.1007/s44311-025-00018-4)
+The published BE column comes from the supplied QA-corrected evidence matrix, sheet “Bảng 3,” BPIC13_CP rows 8, 20, 32, 44, 56, 68, 80, 92 and 104, which reference printed page 34. The correctness mean has opposite signs in the two evaluations. The independent contrastivity mean excludes 480 undefined prefixes from its scheduled 1,259. The pinned author file `processtransformer/xai/metrics/contrastivity_co05.py` (lines 74, 95–107) defaults to cosine distance .25 and returns zero when no eligible variant survives. The independent protocol uses cosine similarity below .8 and leaves an empty far group undefined. The archived denominators and observed zero values are documented below. [Paper](https://link.springer.com/article/10.1007/s44311-025-00018-4)
 
 Among eligible consistency pairs, 0/1,207 had both projected graphs empty. The same count was 0/10,736 near and 0/1,737 far variant pairs. Global BE compactness was three rules with mean RHS 1.666667. The per-prefix mean F1 is based on per-prefix scores. The sealed output, graph receipt hashes, cohort membership, eligibility and null reasons are under `artifacts/bpic13-cp-v1/evaluation-be/evaluation.json`.
 
-Author-runtime parity, historical run linkage, BPMN alignment and human evaluation remain unverified. Model fidelity and structural agreement remain separate claims.
+### Table 3 archive reconciliation
+
+Recomputed all 216 AE/BE mean and sample-SD pairs from the archived CSVs across twelve logs and nine outputs. Every pair matches the supplied QA-corrected evidence matrix after rounding to two decimals. Missing values stay missing, including sample SD when only one finite observation exists. The audit records each CSV path and hash, source column, workbook row and hash, row count, finite count, zero count and both aggregates in `data/raw/author-supplement/table3-reconciliation.json`. [Author archive](https://drive.google.com/file/d/1p-mbznaXoYI0ofqlzKGPzJ1FVcAX0Pg4/view)
+
+| Table 3 output | Archived CSV | Column used |
+|---|---|---|
+| Correctness | `correctness_co01.csv` | `kendalltau-corr` |
+| Completeness precision/recall/F1 | `completeness_co02_combined.csv` | `precision_weighted`, `recall_weighted`, `f_weighted` |
+| Consistency | `consistency_co03_complete.csv` | `relaxed_consistency` |
+| Continuity | `continuity_co04.csv` | `threshold_less_sim` |
+| Contrastivity | `contrastivity_co05.csv` | `diff_sim` |
+| Compactness | `compactness_co07.csv` | `num_rules`, `avg_right_side_length` |
+
+For BPIC13_CP, the contrastivity CSV contains 400 rows per method. In each, exactly 373 rows have no eligible variants and record a score of zero. The published means include these rows. The 27 retained nonzero rows are the rest of each file. Completeness has 100 weighted rows per method, while correctness has 125/398 finite AE values and 397/398 finite BE values. These denominators are established for the archived results. The independent protocol reports per-prefix completeness and treats no eligible contrastivity variants as undefined. Comparisons use descriptive context and keep the two aggregation rules distinct.
+
+Author-runtime parity and prediction-to-checkpoint linkage remain unverified.
 
 ## Author-supplied synthetic benchmarks
 
