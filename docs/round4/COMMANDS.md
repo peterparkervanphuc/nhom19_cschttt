@@ -62,7 +62,7 @@ BE can be evaluated independently where the exhaustive AE schedule cannot comple
 & .venv/Scripts/python.exe -m nhom19_process_xai evaluate --prepared data/processed/bpic13-cp-v1.json --checkpoint artifacts/bpic13-cp-v1/base/checkpoint.pt --be-only --baseline-be artifacts/bpic13-cp-v1/explain-v1/BE.json --output artifacts/bpic13-cp-v1/evaluation-be
 ```
 
-Reopen a completed streaming run using the command below. It checks the dataset and checkpoint, the complete test cohort, the SQLite digest and each record seal, and reconstructs the summaries. For E1, pass the exact count artifact from `scripts/count_e1_variants.py`. E2 and E3 do not need `--workload`.
+Reopen a completed streaming run using the command below. It checks the dataset and checkpoint, the complete test cohort, the SQLite digest and each record seal, and reconstructs the summaries. For E1, pass the exact count artifact from `scripts/count_e1_variants.py`. E2 and E3 do not need `--workload`. The E2 receipt also recomputes the raw and L1-normalized maximum-attention bins and the TVD filter on each record, reporting counts separately by arm.
 
 ```powershell
 & .venv/Scripts/python.exe scripts/audit_streamed_study.py --manifest artifacts/bpic13-cp-v1/E1-stream.json --prepared data/processed/bpic13-cp-v1.json --checkpoint artifacts/bpic13-cp-v1/base/checkpoint.pt --workload artifacts/bpic13-cp-v1/E1-workload-counter.json
