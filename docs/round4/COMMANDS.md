@@ -75,7 +75,7 @@ For the author-supplied synthetic benchmarks, extract the exact XES members from
 & .venv/Scripts/python.exe scripts/audit_explainer_run.py --run artifacts/synthetic-sequence/explain --prepared data/processed/synthetic-sequence.json --checkpoint artifacts/synthetic-sequence/base/checkpoint.pt
 ```
 
-To audit the BE graph and the planned AE schedule without claiming AE execution, use the `--be-only` flag on this auditor.
+Use `--be-only` on the auditor to verify the BE graph and the planned AE schedule without running AE. Both modes report a lower bound on the bytes of context text. Full mode also checks that every selected target has exactly one vote occurrence for each prefix position in each context.
 
 ## Integrated streaming studies
 
