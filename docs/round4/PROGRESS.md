@@ -76,3 +76,7 @@ BPIC12_WC passed CLI preparation, all 10 training epochs and full test predictio
 Helpdesk now has event-level provenance against the 4TU release. The pinned XES passed both count and per-case CSV equivalence checks, and the baseline predicted all 4,983 test prefixes. BPIC13 incidents E3 completed across two sessions and passed the ledger audit. BPIC12_O BE completed and exported the visually checked 12-edge graph. The corresponding exhaustive AE schedule has 113,657,644 pending contexts.
 
 BPIC12_WC E1 completed all 280,907 variants and Helpdesk E3 completed all 4,983 prefixes. The streamed-study auditor verified both results. Helpdesk E1 and BPIC12_O E2 remain in progress with the source from commit `281b40b`.
+
+The read-only author repository led to the supplementary archive. All twelve dataset inputs now have provenance and count evidence, and the archive metrics agree with all 36 rounded Table 2 values. The archived historical splits differ from the independent splits. Helpdesk E1 and BPIC12_O E2 completed and passed the artifact audit.
+
+All four author-supplied synthetic baselines completed. Sequence and Long-Dist-Dep completed full E1–E3 and BE/AE. The explainer auditor checked the sealed context inventories and reproduced both graphs from the persisted records. It rejected a mismatched checkpoint. Sequence was compared against the 11 direct edges in its archived BPMN. The paired Sequence XAI run selected seed 3005 and found an exact candidate schedule of 111,848 contexts; execution is underway. [Experimental results](EXPERIMENTAL_RESULTS.md)

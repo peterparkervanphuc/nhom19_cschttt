@@ -1,6 +1,6 @@
 # Round 4 experimental results
 
-Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Six real-data baselines have executed on verified inputs. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round3 and Round3.6. Every result below retains its own dataset, split, source and checkpoint identity.
+Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Six real-log and four author-supplied synthetic-log baselines have executed on verified inputs. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round 3 and Round 3.6. Every result below retains its own dataset, split, source and checkpoint identity.
 
 | Component | Execution status | Evidence |
 |---|---|---|
@@ -73,9 +73,11 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC13 incidents E1 | 17,402/17,402 prefixes, 304,355 variants | Mean tau-b .699499, SD .644450, 12,498 valid and 4,904 undefined | `bpic13-i-v1/E1-stream.json` |
 | BPIC13 incidents E3 | 17,402/17,402 prefixes | Mean prefix TVD .152617, SD .158701 | `bpic13-i-v1/E3-stream.json` |
 | BPIC12_O E1 | 7,763/7,763 prefixes, 67,722 variants | Mean tau-b .712442, SD .370154, 6,197 valid and 1,566 undefined | `bpic12-o-v1/E1-stream.json` |
+| BPIC12_O E2-FC | 77,630/77,630 paired prefix records | Seed mean JSD .002668–.003713 for BASE and .00163521–.00163549 for FC. Seed mean prediction TVD .025136–.055303 for BASE and .026869–.039663 for FC | `bpic12-o-v1/E2-stream.json` |
 | BPIC12_O BE | 7,763/7,763 prefixes | Global graph with 7 nodes and 12 directed edges | `bpic12-o-v1/graphs/BE/manifest.json` |
 | BPIC12_O AE | 0/113,657,644 contexts | Exact workload established from the full BE pass | `bpic12-o-v1/be-only-v1/coverage.json` |
 | BPIC12_WC E1 | 18,472/18,472 prefixes, 280,907 variants | Mean tau-b .780294, SD .377938, 13,370 valid and 5,102 undefined | `bpic12-wc-v1/E1-stream.json` |
+| Helpdesk E1 | 4,983/4,983 prefixes, 390,254 variants | Mean tau-b .903136, SD .236441, 3,497 valid and 1,486 undefined | `helpdesk-v1/E1-stream.json` |
 | Helpdesk E3 | 4,983/4,983 prefixes | Mean prefix TVD .310606, SD .227002 | `helpdesk-v1/E3-stream.json` |
 
 BPIC13 incidents E1 stopped after 236,445 variants at the 240-second session limit. The saved source from commit `e67565b` was used to resume. The second session added 67,910 variants in 57.25 seconds. The final ledger SHA-256, checkpoint SHA-256, per-prefix SQLite row counts and exact schedule count agree with the manifest.
@@ -83,6 +85,8 @@ BPIC13 incidents E1 stopped after 236,445 variants at the 240-second session lim
 BPIC13 incidents E3 completed 9,915 prefixes before its first 300-second quota, then 7,487 more in 282.28 seconds. The auditor verified every sealed prefix unit and reconstructed the reported summary. BPIC12_O graph edge membership matched the GraphML export and the SVG was visually checked.
 
 The completed BPIC12_WC E1 and Helpdesk E3 results passed the streamed-study audit, including prepared and checkpoint hashes, full cohort membership, every SQLite record seal and reconstructed summaries. The independent exact schedule count also matched all BPIC12_WC E1 variants.
+
+BPIC12_O E2 resumed under the identical source snapshot after a quota stop at 54,341 records. The second session added 23,289 records in 326.53 seconds. The auditor verified all ten arms and model checkpoints. Helpdesk E1 passed the same artifact audit and matched its independently computed variant count.
 
 Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second session resumed from the exact source snapshot, preserving prior units. Total wall time across these sessions was 608.32 seconds. BPIC13-CP E2 used five fresh BASE and five frozen-constant seeds, with 10 epochs each. Figure files in `artifacts/figures/bpic13-cp-v2/` show the E1 distribution, the descriptive E2 scatter and the E3 distribution. Its CSV preserves the ten exact seed means when markers overlap.
 
@@ -109,3 +113,25 @@ The published BE column comes from the supplied QA-corrected evidence matrix, sh
 Among eligible consistency pairs, 0/1,207 had both projected graphs empty. The same count was 0/10,736 near and 0/1,737 far variant pairs. Global BE compactness was three rules with mean RHS 1.666667. The per-prefix mean F1 is based on per-prefix scores. The sealed output, graph receipt hashes, cohort membership, eligibility and null reasons are under `artifacts/bpic13-cp-v1/evaluation-be/evaluation.json`.
 
 Author-runtime parity, historical run linkage, BPMN alignment and human evaluation remain unverified. Model fidelity and structural agreement remain separate claims.
+
+## Author-supplied synthetic benchmarks
+
+All four independent baselines used the same primary CPU training schedule as the real-log baselines. The prediction audit matched every case ID, prefix ID, observed target and checkpoint hash and reproduced weighted metrics using sklearn. Sequence and Long-Dist-Dep each reach perfect held-out accuracy on this split. Sequence has one activity sequence across all 1,000 cases. The 3,300 prefixes therefore come from repeated sequences and do not test generalization to new variants. [Dataset provenance](DATASET_PROVENANCE.md)
+
+| Log | Test prefixes | Weighted precision | Accuracy | Weighted F1 | Training wall seconds |
+|---|---:|---:|---:|---:|---:|
+| Sequence | 3,300 | 1.000000 | 1.000000 | 1.000000 | 19.83 |
+| Long-Dist-Dep | 1,957 | 1.000000 | 1.000000 | 1.000000 | 11.16 |
+| Complex-Model | 21,555 | .590404 | .594897 | .556404 | 191.97 |
+| Looped-AND | 10,873 | .743368 | .655753 | .607638 | 143.52 |
+
+| Log | E1 variants and mean tau-b | E2 paired prefix records and seed mean JSD | E3 mean prefix TVD | BE edges | AE contexts and edges |
+|---|---|---|---|---:|---|
+| Sequence | 19,800 variants, .450363 over 3,000/3,300 valid prefixes | 33,000, BASE .004178–.008270 and FC .00474030–.00474037 | .086950 on 3,300 prefixes | 13 | 137,344/137,344, 45 edges |
+| Long-Dist-Dep | 9,356 variants, .814777 over 1,657/1,957 valid prefixes | 19,570, BASE .00013762–.00037796 and FC .00010379–.00010382 | .141284 on 1,957 prefixes | 11 | 67,290/67,290, 35 edges |
+
+The tables use `artifacts/synthetic-{sequence,long-dist-dep,complex-model,looped-and}/`. Sequence E2 resumed from 32,336 records, adding the final 664. All six E1–E3 manifests for Sequence and Long-Dist-Dep passed the streamed-study audit. For both baselines, `explainer-audit.json` records hashes of the BE/AE artifacts and ledger. The audit replayed BE merges and pruning and checked every AE subset key, intervention mask, vote occurrence and checksum before regenerating the aggregate matrices and graph from the stored votes.
+
+### Sequence BPMN comparison
+
+The archived `longer_sequence.bpmn` contains 12 tasks and no gateways. The diagnostic maps each BPMN name `X` to the XES activity label `Activity X` and takes the 11 direct task-to-task sequence flows. After excluding the start and end events, those flows match the complete observed activity sequence in both independent splits. BE shares 10 edges with the reference, adds 3 and misses 1 (Jaccard .714286). AE shares all 11 and adds 34 (Jaccard .244444). The edge lists and exact source hashes are in `artifacts/synthetic-sequence/bpmn-structure.json`. This checks agreement with the reference sequence. An explainer edge can also encode an earlier activity's contribution to a later prediction. Human interpretability remains untested.
