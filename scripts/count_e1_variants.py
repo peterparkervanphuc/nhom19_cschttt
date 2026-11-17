@@ -6,11 +6,12 @@ from functools import lru_cache
 from hashlib import sha256
 import json
 from pathlib import Path
+import random
 
 import networkx as nx
 
 from nhom19_process_xai.artifacts import read_sealed, seal, write_json
-from nhom19_process_xai.data.pipeline import file_hash, iter_xes_traces, split_cases
+from nhom19_process_xai.data.pipeline import file_hash, fingerprint, iter_xes_traces, split_cases
 from nhom19_process_xai.data.preparation import preprocess
 from nhom19_process_xai.experiments.perturbations import training_dfg
 
@@ -76,7 +77,27 @@ def count_schedule(prepared, activity_limit=None):
     return count_paths(graph, starts, (row["activities"] for row in prepared["prefixes"]["test"]), activity_limit)
 
 
-def count_xes_lower_bound(config_path, activity_limit):
+def xai_prefix_sample(cases, split, baseline_run):
+    raw_run = baseline_run.read_bytes()
+    run = json.loads(raw_run)
+    identity = run["identity"]
+    checkpoint = file_hash(baseline_run.with_name("checkpoint.pt"))
+    if (run["status"] != "completed" or identity["model"]["profile"] != "BASE"
+            or run["completed_epochs"] != run["expected_epochs"]
+            or checkpoint != run["checkpoint_sha256"] or identity["split_sha256"] != fingerprint(split)):
+        raise ValueError("XAI workload requires a completed baseline and the same case split")
+    ordered = sorted((fingerprint([identity["processed_sha256"], identity["split_sha256"], case_id, length]),
+                      case_id, length)
+                     for case_id in split["test"] for length in range(1, len(cases[case_id])))
+    sample = sorted(random.Random(404).sample(ordered, max(1, int(.8 * len(ordered))))) if ordered else []
+    return ((cases[case_id][:length] for _, case_id, length in sample),
+            {"xai_sample_seed": 404, "xai_population": len(ordered),
+             "xai_sample_sha256": fingerprint([prefix_id for prefix_id, _, _ in sample]),
+             "xai_baseline_run_sha256": sha256(raw_run).hexdigest(),
+             "xai_checkpoint_sha256": checkpoint})
+
+
+def count_xes_lower_bound(config_path, activity_limit, xai_baseline_run=None):
     raw_config = config_path.read_bytes()
     config = json.loads(raw_config)
     if config["format"] != "xes" or "split" in config or config.get("scope") != "verified_dataset":
@@ -105,10 +126,17 @@ def count_xes_lower_bound(config_path, activity_limit):
         starts.add(labels[0])
         graph.add_nodes_from(labels)
         graph.add_edges_from(zip(labels, labels[1:]))
-    prefixes = (cases[case_id][:length] for case_id in split["test"] for length in range(1, len(cases[case_id])))
+    if xai_baseline_run is None:
+        prefixes = (cases[case_id][:length] for case_id in split["test"] for length in range(1, len(cases[case_id])))
+        sample_receipt = {}
+    else:
+        prefixes, sample_receipt = xai_prefix_sample(cases, split, xai_baseline_run)
     result = count_paths(graph, starts, prefixes, activity_limit)
     result.update(raw_sha256=digest, dataset_config_sha256=sha256(raw_config).hexdigest(), split_seed=seed,
-                  train_cases=len(split["train"]), test_cases=len(split["test"]))
+                  train_cases=len(split["train"]), test_cases=len(split["test"]), **sample_receipt)
+    if xai_baseline_run is not None:
+        # Every retained variant contributes a 64-character ID to each evaluated method's rows.
+        result["xai_variant_id_bytes_per_method_lower_bound"] = 64 * result["variant_count_lower_bound"]
     return result
 
 
@@ -118,14 +146,18 @@ if __name__ == "__main__":
     source.add_argument("--prepared", type=Path)
     source.add_argument("--xes-config", type=Path, help="Stream a verified XES using its dataset configuration")
     parser.add_argument("--induced-activities", type=int, help="Count only interior paths inside this many top-degree activities")
+    parser.add_argument("--xai-baseline-run", type=Path,
+                        help="Use the seed-404 XAI cohort from a completed baseline run.json and its adjacent checkpoint")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.xai_baseline_run is not None and args.xes_config is None:
+        parser.error("--xai-baseline-run requires --xes-config")
     if args.output.exists():
         raise FileExistsError(args.output)
     if args.xes_config is not None:
         if args.induced_activities is None:
             parser.error("--xes-config requires --induced-activities")
-        result = count_xes_lower_bound(args.xes_config, args.induced_activities)
+        result = count_xes_lower_bound(args.xes_config, args.induced_activities, args.xai_baseline_run)
     else:
         result = count_schedule(read_sealed(args.prepared), args.induced_activities)
         result["prepared_sha256"] = file_hash(args.prepared)

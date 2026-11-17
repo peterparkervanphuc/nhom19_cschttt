@@ -109,6 +109,16 @@ BPIC12_W E1 completed its exact schedule of **1,334,973 variants** across 47,280
 
 Exhaustive AE on BPIC12_O and BPIC13_CP is also storage-limited. From the verified BE records, the lower bound counts the 64-byte prefix ID in both the SQLite row and its JSON payload, the 64-byte payload checksum, and the occurrence ID characters stored once per prefix position per selected target. Each position is recorded on either the masked or visible side on every context. Multiplying by the exact per-prefix context counts gives at least **47,502,862,092 bytes** for BPIC12_O and **240,980,201,722 bytes** for BPIC13_CP before other payload fields, SQLite overhead and the inference cache. Both local drives had less than 42 GB free. Each log folder contains `ae-storage-bound.json`. The same computation on the completed Helpdesk baseline gives a 23,011,036-byte bound, below its observed 490,749,952-byte ledger size.
 
+Even a BE-only XAI evaluation retains a 64-character ID for every perturbation on its fixed seed-404 cohort. The same induced-path bound, applied to that cohort, puts each of the following outputs beyond the available local disk space before any other field is counted.
+
+| Log | Scheduled XAI prefixes | Minimum variants | Minimum ID bytes per method |
+|---|---:|---:|---:|
+| BPIC12 | 58,993 | 1,951,732,985 | 124,910,911,040 |
+| Sepsis | 3,583 | 1,880,973,581 | 120,382,309,184 |
+| Complex-Model | 17,244 | 12,630,132,171 | 808,328,458,944 |
+
+The three sampled-prefix hashes match a separate reconstruction from the saved predictive cohorts. BPIC12_O served as a control: its sampled IDs match the completed evaluation and the bound equals its actual 54,573 variant records. Each log folder contains `xai-evaluation-workload-v2.json`. These counts establish a limit for the published per-variant output and yield no XAI metrics for the three storage-limited evaluations.
+
 BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 variants on 1,574 prefixes. Every ordered variant record matched the original full E1 run. The compared importance vectors and tau-b scores also matched exactly. The completed manifest is `artifacts/bpic13-cp-v1/E1-stream.json`.
 
 | Log and study | Completed units | Measured result | Evidence under `artifacts/` |

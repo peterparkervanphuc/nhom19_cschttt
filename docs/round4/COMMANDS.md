@@ -56,6 +56,12 @@ Recompute the full BPIC12 E1 storage gate directly from the pinned XES without l
 & .venv/Scripts/python.exe scripts/count_e1_variants.py --xes-config configs/datasets/bpic12.json --induced-activities 14 --output artifacts/bpic12-v1/E1-workload-lower-bound-v2.json
 ```
 
+Add `--xai-baseline-run` with the completed baseline `run.json` to restrict the bound to the seed-404 XAI cohort. The command checks the adjacent checkpoint and case-split hashes and reports the minimum number of bytes occupied by the variant IDs for one method.
+
+```powershell
+& .venv/Scripts/python.exe scripts/count_e1_variants.py --xes-config configs/datasets/bpic12.json --induced-activities 14 --xai-baseline-run artifacts/bpic12-v1/base/run.json --output artifacts/bpic12-v1/xai-evaluation-workload-v2.json
+```
+
 Run E1 with a wall time quota and an optional quota for new variants. Use the same output path, dataset, checkpoint and source to resume. The SQLite ledger and prefix accumulators advance together in transactions. An incomplete session publishes progress under the sibling `E1-stream-e1-run/` directory. The result JSON appears only after all scheduled prefixes complete. Use the original source commit or its snapshot if resuming after code changes.
 
 ```powershell
