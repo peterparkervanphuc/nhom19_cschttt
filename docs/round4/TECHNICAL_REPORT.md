@@ -26,6 +26,9 @@ The paper and locked Round 3.6 decisions define the baseline. The sibling author
 | BPIC13-CP E2 | Five BASE and five frozen-constant comparisons. Mean JSD per seed .007405–.024901 for BASE and .00482464–.00482480 for frozen-constant | Descriptive results for the locked comparison and this split. |
 | BPIC13-CP E3 | Mean prefix TVD .222190 over 1,574 prefixes | Paper masking profile. |
 | BPIC13 incidents predictive performance | Accuracy .697104 and weighted F1 .669383 on all 17,402 prefixes | Independently checked against sklearn. The paper reports .69 and .57, respectively, with historical run linkage still unverified. |
+| BPIC13 incidents E1 | Mean tau-b .699499 over 12,498 valid results, out of 17,402 prefixes | Completed all 304,355 variants across two sessions. |
+| BPIC13-CP BE evaluation | Mean completeness F1 .777019 on 1,259 scheduled prefixes. Correctness −.093826 over 643 valid prefixes. | All nine BE outputs are available. AE and method differences remain unevaluated on this cohort. |
+| BPIC12_O predictive performance | Accuracy .819142 and weighted F1 .799364 on 7,763 prefixes | The project CLI reproduced the expected filtered dataset counts and sklearn reproduced the metrics. |
 | Sepsis predictive performance | Accuracy .607055 and weighted F1 .575063 on all 4,479 prefixes | The published figures are .51 and .46. The comparison does not control for historical checkpoints or protocol differences. |
 | Sepsis E3 and BE | Mean prefix TVD .157010. BE graph has 14 nodes and 16 directed edges | Complete on the local test prefix set. The graph represents model behavior. |
 | AE workload | BPIC13-CP: 809,189,178 scheduled contexts. Sepsis: approximately 9.58 × 10^52 | The locked exhaustive procedure makes full execution infeasible at measured local resources. An incomplete run does not supply a full-log AE graph or paired XAI metrics. |
@@ -43,7 +46,7 @@ The [experimental results record](EXPERIMENTAL_RESULTS.md) gives artifact paths,
 | Reference and baseline boundaries | PASS | Read-only author repository. Sampling diagnostics are separate from primary schedules. |
 | Environment and dependency recreation | PASS | CPU lock installed in a second uv Python 3.11.15 environment, tests and `pip check` verified |
 | Data pipeline and twelve-log scope | PARTIAL | Seven official log variants have raw/count evidence. Exact Helpdesk and four synthetic logs and their reference models still lack verified inputs. |
-| Tests and end-to-end checks | PASS | 53 tests in `artifacts/s0/e1-streaming-suite.xml`. Complete fixture pipeline, interrupted E1 resume and checksum checks on full E2/E3 runs. |
+| Tests and end-to-end checks | PASS | 54 tests in `artifacts/s0/filtered-xes-suite.xml`. Complete fixture pipeline, interrupted E1 resume, BE-only evaluation parity, trace-wise filter audit, and checksum checks on full E2/E3 runs. |
 | Full feasible real experiments and comparison | PARTIAL | Several stage/log combinations are complete. More official-log runs and a comparison protocol for real explanation metrics remain. Author execution is not yet established. |
 | Full exhaustive AE on Sepsis | BLOCKED for execution | A single prefix has 174 eligible positions. Adding ordinary local or cloud resources cannot make this schedule feasible. |
 | Commands, configuration, seeds, checkpoints | PASS for reported runs | [Commands](COMMANDS.md), versioned configs, source hashes and sealed run receipts |

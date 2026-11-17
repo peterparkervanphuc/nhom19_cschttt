@@ -1,6 +1,6 @@
 # Round 4 experimental results
 
-Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Three official real-data baselines and bounded pilots have executed. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round3 and Round3.6. Every result below retains its own dataset, split, source and checkpoint identity.
+Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Four real-data baselines have executed on verified official inputs. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round3 and Round3.6. Every result below retains its own dataset, split, source and checkpoint identity.
 
 | Component | Execution status | Evidence |
 |---|---|---|
@@ -19,17 +19,20 @@ The XAI fixture cohort is the same two prefixes for both methods. BE completenes
 
 ## Real-data baselines
 
-All three use the verified official version 1 originals, activity-only labels, a case-level random 70/30 split with seed 42 and training seed 1729. They use CPU float32, 10 epochs, batch size 12 and Adam with learning rate .001. These runs used independently generated checkpoints.
+The runs use the verified official version 1 archives, activity-only labels, a case-level random 70/30 split with seed 42 and training seed 1729. They use CPU float32, 10 epochs, batch size 12 and Adam with learning rate .001. Each run uses an independently trained checkpoint.
 
 | Log | Test prefixes completed/expected | Weighted precision | Accuracy/weighted recall | Weighted F1 | Training wall seconds |
 |---|---:|---:|---:|---:|---:|
 | Sepsis | 4,479/4,479 | .6445562480 | .6070551462 | .5750634064 | 88.211886 |
 | BPIC13 closed problems | 1,574/1,574 | .4916116862 | .5654383736 | .5217793991 | 19.217390 |
 | BPIC13 incidents | 17,402/17,402 | .7093138347 | .6971037812 | .6693827922 | 156.156451 |
+| BPIC12 O | 7,763/7,763 | .8249324235 | .8191420842 | .7993637164 | 53.697025 |
 
 Artifacts: artifacts/sepsis-v1/base and predictions.json; artifacts/bpic13-cp-v1/base and predictions.json. Raw acquisition and file/count checks are described in DATASET_PROVENANCE.md. No test targets were used for fitting or class-vocabulary construction.
 
 BPIC13 incidents outputs use the same paths under `artifacts/bpic13-i-v1/`. Checkpoint SHA-256 and all target/prefix IDs were verified. Independent sklearn metrics agreed with the sealed record. Paper Table 2 gives precision/accuracy/F1 of .50/.69/.57 for BPIC13-I. The local weighted F1 gap is approximately +.0994 on the independent split, with historical checkpoint linkage still unknown.
+
+BPIC12_O outputs use `artifacts/bpic12-o-v1/`. The CLI passed the expected input hash and count checks. It retained 31,244 out of 262,200 source events with prefix `O_`, removing 8,072 of 13,087 cases. The 7,763 prediction IDs and targets matched the prepared split exactly, and sklearn reproduced the metrics. Published precision/accuracy/F1 are .96/.93/.93. The local F1 difference is −.1306 on the independent split.
 
 For descriptive context, the supplied paper's Table2, printed page30, reports precision/accuracy/F1=(.49,.51,.46) for Sepsis and (.69,.83,.76) for BPIC13_CP. Local F1 differences are +.1151 and −.2382, respectively. These are not controlled improvements/regressions or significance results: source implementation, split/seed, masking and other locked protocol decisions differ, and the historical training artifacts are unavailable. The BPIC13 gap needs investigation before making fidelity-to-paper claims. Local extraction is retained in artifacts/paper-table2-page30.txt; the successful extraction used installed fontTools and produced no parser warning. [Paper](https://link.springer.com/article/10.1007/s44311-025-00018-4)
 
@@ -55,9 +58,33 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC13-CP E3-PAPER | 1,574/1,574 prefixes | Mean prefix TVD .222190, SD .178234 | `bpic13-cp-v1/E3-stream.json` |
 | BPIC13-CP BE | 1,574/1,574 prefixes | Global graph with 3 nodes and 5 directed edges | `bpic13-cp-v1/graphs/BE/manifest.json` |
 | BPIC13-CP AE | 1/809,189,178 contexts | Incomplete. The BE pass established the exact workload over all test prefixes | `bpic13-cp-v1/explain-v1/coverage.json` |
+| BPIC13 incidents E1 | 17,402/17,402 prefixes, 304,355 variants | Mean tau-b .699499, SD .644450, 12,498 valid and 4,904 undefined | `bpic13-i-v1/E1-stream.json` |
+| BPIC12_O E1 | 7,763/7,763 prefixes, 67,722 variants | Mean tau-b .712442, SD .370154, 6,197 valid and 1,566 undefined | `bpic12-o-v1/E1-stream.json` |
+
+BPIC13 incidents E1 stopped after 236,445 variants at the 240-second session limit. The saved source from commit `e67565b` was used to resume. The second session added 67,910 variants in 57.25 seconds. The final ledger SHA-256, checkpoint SHA-256, per-prefix SQLite row counts and exact schedule count agree with the manifest.
 
 Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second session resumed from the exact source snapshot, preserving prior units. Total wall time across these sessions was 608.32 seconds. BPIC13-CP E2 used five fresh BASE and five frozen-constant seeds, with 10 epochs each. Figure files in `artifacts/figures/bpic13-cp-v2/` show the E1 distribution, the descriptive E2 scatter and the E3 distribution. Its CSV preserves the ten exact seed means when markers overlap.
 
 The BPIC13-CP discrepancy was probed against author commit `494b315a555e713bdd61f0edd7d033c31d5850bf`. `processtransformer/ml/prepare/splitter.py` lines 34–39 and 111–119 shuffle case IDs in log order and take the first floor(0.7 × N) cases for training. Applying that procedure with seed 42 to the acquired log yields the same 447 test cases as the independent sorted-ID protocol. The pinned `experiments/training/exp_bpic13_closed_problems.json` specifies 5 epochs and batch 50. A separate diagnostic kept the local dataset split, architecture, Adam settings and training seed, and adopted that schedule. Accuracy was .559720 and weighted F1 was .517447 on all 1,574 prefixes (`artifacts/bpic13-cp-v1/source-schedule/predictions.json`). This schedule alone does not close the gap to Table 2. The author's historical run configuration and checkpoint linkage remain unresolved.
 
-No author-runtime execution, historical split equivalence, BPMN alignment or user study has been established. Model fidelity, process-model structural agreement and human interpretability remain separate claims. Missing results and undefined metrics are not zeros.
+## BPIC13-CP BE explanation evaluation
+
+The BE-only evaluation completed all 1,259 scheduled metric prefixes (floor of 80% of 1,574, seed 404). Both graphs were built on the full test prefix set, using prefix activities and model predictions. None of the observed next-event targets entered BE rule construction. The run reused the baseline graph after validating its checksum, dataset, checkpoint and coverage. From five candidates, the largest trainable-weight distance was .189723 for seed 3005. The selected candidate's BE graph also completed the full test prefix set. The run left 809,086,778 candidate AE contexts pending and reports no paired AE–BE statistics.
+
+| BE metric | Independent mean | Sample SD | Valid / scheduled | Published BE mean ± SD |
+|---|---:|---:|---:|---:|
+| Correctness | −.093826 | .979988 | 643 / 1,259 | .75 ± .18 |
+| Completeness precision | .863384 | .235893 | 1,259 / 1,259 | .74 ± .23 |
+| Completeness recall | .742123 | .198694 | 1,259 / 1,259 | .46 ± .11 |
+| Completeness F1 | .777019 | .177182 | 1,259 / 1,259 | .50 ± .14 |
+| Consistency | .988437 | .022998 | 1,207 / 1,259 | .59 ± .18 |
+| Continuity | .608514 | .404096 | 1,259 / 1,259 | .49 ± .13 |
+| Contrastivity | .614959 | .263102 | 779 / 1,259 | .05 ± .20 |
+| Compactness rules | 1.585385 | .573370 | 1,259 / 1,259 | 2.16 ± .53 |
+| Compactness RHS | 1.737490 | .256072 | 1,259 / 1,259 | .60 ± .20 |
+
+The published BE column comes from the supplied QA-corrected evidence matrix, sheet “Bảng 3,” BPIC13_CP rows 8, 20, 32, 44, 56, 68, 80, 92 and 104, which reference printed page 34. Comparison is descriptive. The correctness direction differs, and the independent contrastivity mean has 480 undefined prefixes. The pinned author file `processtransformer/xai/metrics/contrastivity_co05.py` (lines 74, 95–107) defaults to cosine distance .25 and returns zero when no eligible variant survives. The independent protocol uses cosine similarity below .8 and leaves an empty far group undefined. That difference can affect the mean; the historical settings and denominators used to generate Table 3 remain unverified. [Paper](https://link.springer.com/article/10.1007/s44311-025-00018-4)
+
+Among eligible consistency pairs, 0/1,207 had both projected graphs empty. The same count was 0/10,736 near and 0/1,737 far variant pairs. Global BE compactness was three rules with mean RHS 1.666667. The per-prefix mean F1 is based on per-prefix scores. The sealed output, graph receipt hashes, cohort membership, eligibility and null reasons are under `artifacts/bpic13-cp-v1/evaluation-be/evaluation.json`.
+
+Author-runtime parity, historical run linkage, BPMN alignment and human evaluation remain unverified. Model fidelity and structural agreement remain separate claims.

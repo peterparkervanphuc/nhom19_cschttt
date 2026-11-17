@@ -55,3 +55,9 @@ Run E1 with a wall time quota and an optional quota for new variants. Use the sa
 ```powershell
 & .venv/Scripts/python.exe -m nhom19_process_xai experiment E1 --streaming --prepared data/processed/sepsis-v1.json --checkpoint artifacts/sepsis-v1/base/checkpoint.pt --output artifacts/sepsis-v1/E1-stream.json --max-variants 5000 --max-seconds 60
 ```
+
+BE can be evaluated independently where the exhaustive AE schedule cannot complete. The command keeps the five Co03 candidates and the same evaluation sample as paired mode. A provided baseline graph must match the checkpoint, dataset and full prefix set. The output contains BE rows and an explicit paired status of `not_evaluated`.
+
+```powershell
+& .venv/Scripts/python.exe -m nhom19_process_xai evaluate --prepared data/processed/bpic13-cp-v1.json --checkpoint artifacts/bpic13-cp-v1/base/checkpoint.pt --be-only --baseline-be artifacts/bpic13-cp-v1/explain-v1/BE.json --output artifacts/bpic13-cp-v1/evaluation-be
+```
