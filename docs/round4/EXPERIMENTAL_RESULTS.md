@@ -101,6 +101,8 @@ Full BPIC12 E1 has a verified lower bound of **2,440,580,925 variants** on 73,74
 
 BPIC12_W has an exact E1 schedule of **1,334,973 variants** on 47,280 prefixes. Its first bounded session persisted 100,000 variants and finished 3,253 prefixes in 100.80 seconds. The same ledger resumed with its original source and checkpoint. This partial session provides throughput and storage evidence, with full metrics pending.
 
+Exhaustive AE on BPIC12_O and BPIC13_CP is also storage-limited. From the verified BE records, the lower bound counts the 64-byte prefix ID in both the SQLite row and its JSON payload, the 64-byte payload checksum, and the occurrence ID characters stored once per prefix position per selected target. Each position is recorded on either the masked or visible side on every context. Multiplying by the exact per-prefix context counts gives at least **47,502,862,092 bytes** for BPIC12_O and **240,980,201,722 bytes** for BPIC13_CP before other payload fields, SQLite overhead and the inference cache. Both local drives had less than 42 GB free. Each log folder contains `ae-storage-bound.json`. The same computation on the completed Helpdesk baseline gives a 23,011,036-byte bound, below its observed 490,749,952-byte ledger size.
+
 BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 variants on 1,574 prefixes. Every ordered variant record matched the original full E1 run. The compared importance vectors and tau-b scores also matched exactly. The completed manifest is `artifacts/bpic13-cp-v1/E1-stream.json`.
 
 | Log and study | Completed units | Measured result | Evidence under `artifacts/` |

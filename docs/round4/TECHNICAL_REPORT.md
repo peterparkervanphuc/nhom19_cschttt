@@ -53,10 +53,10 @@ All twelve logs have audited next-activity predictions. A workload count describ
 | Log | E1 | E2-FC | E3-PAPER | BE | Exhaustive AE and evaluation |
 |---|---|---|---|---|---|
 | BPIC12 | ≥2,440,580,925 variants, storage-limited | Pending | Pending | Pending | Pending BE workload check |
-| BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 scheduled contexts |
+| BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 contexts. At least 47.5 GB of context text, storage-limited. |
 | BPIC12_W | Resumable run, 1,334,973 variants scheduled | Pending | Pending | Pending | Pending BE workload check |
 | BPIC12_WC | Verified | Pending | Verified | Pending | Pending BE workload check |
-| BPIC13_CP | Verified | Verified | Verified | Verified | 809,189,178 scheduled contexts. BE-only evaluation verified. |
+| BPIC13_CP | Verified | Verified | Verified | Verified | 809,189,178 contexts. At least 241 GB of context text, storage-limited. BE-only evaluation verified. |
 | BPIC13 incidents | Verified | Pending | Verified | Verified | Approximately 1.595 × 10^37 scheduled contexts |
 | Helpdesk | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
 | Sepsis | 15,000 of 2,425,371,457 variants persisted | Resumable run | Verified | Verified | Approximately 9.578 × 10^52 scheduled contexts |
