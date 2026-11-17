@@ -77,6 +77,16 @@ For the author-supplied synthetic benchmarks, extract the exact XES members from
 
 To audit the BE graph and the planned AE schedule without claiming AE execution, use the `--be-only` flag on this auditor.
 
+## Integrated streaming studies
+
+Use the pipeline's streaming mode to persist E1–E3 units in SQLite. If a study stops at a quota or resource floor, `pipeline.json` names the active stage and its study progress receipt. Rerun with the same inputs, source, output directory and `--streaming` mode. The per-study time limit may be changed when resuming. It applies to E1–E3, with E2 checking between whole model training jobs. Predictive output and explanation evaluation retain their existing execution paths.
+
+```powershell
+& .venv/Scripts/python.exe -m nhom19_process_xai pipeline --dataset-config configs/fixture/dataset.json --training-config configs/fixture/training.json --output artifacts/pipeline-streaming-fixture --streaming --study-max-seconds 600
+```
+
+Completed streaming stage receipts bind the ledger to the study manifest. The E2 receipt also includes all ten arm checkpoints and training manifests.
+
 The paired Sequence evaluation used the command below. Its baseline graph directory was initialized from the closed standalone Sequence run by copying `BE.json`, `AE.json`, `coverage.json` and the fully checkpointed `ledger.sqlite` with hash checks. The evaluation also runs from a fresh output directory, generating its own baseline and candidate graphs. A fresh directory may take longer.
 
 ```powershell
