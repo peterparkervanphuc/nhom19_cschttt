@@ -2,7 +2,7 @@
 
 Status: in progress. This report records verified Round 4 evidence and the remaining acceptance criteria as of 2026-11-17.
 
-The independent Python package implements next-activity prediction, the three attention experiments, BE and AE, and predictive and explanation metrics. The integrated command has executed every stage on the committed fixture. Helpdesk and the author-supplied Sequence and Long-Dist-Dep logs completed E1–E3, exhaustive BE/AE and all nine paired explanation outputs. Both synthetic logs also have structural comparisons against their archived BPMNs.
+The independent Python package implements next-activity prediction, the three attention experiments, BE and AE, and predictive and explanation metrics. The integrated command has executed every stage on the committed fixture and the complete Sequence benchmark. The Sequence repeat reproduced the standalone results through all stages and passed receipt, context and metric audits. Helpdesk and the author-supplied Sequence and Long-Dist-Dep logs completed E1–E3, exhaustive BE/AE and all nine paired explanation outputs. Targeted structural comparisons cover all four synthetic BPMNs.
 
 ## Architecture and research fidelity
 
