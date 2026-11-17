@@ -43,3 +43,9 @@ To build the full BE graph and count the exhaustive AE workload on the same pref
 & .venv/Scripts/python.exe -m nhom19_process_xai explain --prepared data/processed/sepsis-v1.json --checkpoint artifacts/sepsis-v1/base/checkpoint.pt --output artifacts/sepsis-v1/be-only-v1 --be-only
 & .venv/Scripts/python.exe -m nhom19_process_xai graph --explanation artifacts/sepsis-v1/be-only-v1/BE.json --output artifacts/sepsis-v1/graphs/BE
 ```
+
+Count the exact E1 schedule without creating variants using the diagnostic below. Counting can itself grow exponentially with the number of distinct activities. The Sepsis count took under two seconds on the local CPU and the BPIC13-CP count matched the 15,569 variants from its completed E1 run.
+
+```powershell
+& .venv/Scripts/python.exe scripts/count_e1_variants.py --prepared data/processed/sepsis-v1.json --output artifacts/sepsis-v1/E1-workload-counter.json
+```

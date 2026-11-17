@@ -36,11 +36,13 @@ Sepsis diagnostic pilot selected12 prefixes at deterministic length quantiles, i
 
 BPIC13-CP diagnostic pilot has k sample max26 and expected contexts134,219,012 across just12 selected prefixes. Its bounded run took2.019184s. Full-log expected contexts remain unknown. Do not extrapolate a complete graph or a full-runtime estimate from the first numeric subsets of the mostly-masked arm.
 
-Sepsis E1's bounded DFG path counter found at least204,539 variants in the12 sampled prefixes and hit the per-neighbor path-count cap. This is a censored workload count, not an E1 measurement or an exhaustive upper bound. Full E1 requires streaming/checkpointing at variant level before a large run.
+Sepsis E1's bounded DFG path counter found at least 204,539 variants in the 12 sampled prefixes. Extending the capped count to all 4,479 test prefixes gave a lower bound of 44,724,588 variants, with 81 neighbor pairs censored. An exact count using memoized visited subsets for simple directed paths gave **2,425,371,457** scheduled variants after adding masks and boundary replacements and excluding identity paths. These counts are recorded under `artifacts/sepsis-v1/E1-workload-full-prefix-set.json` and `E1-workload-exact.json`. They measure the schedule. No Sepsis E1 correlation is available, and a full run requires a variant-level checkpoint and a feasible compute plan.
 
 | Log and study | Completed units | Measured result | Evidence under `artifacts/` |
 |---|---:|---|---|
 | Sepsis E3-PAPER | 4,479/4,479 prefixes | Mean prefix TVD .157010, SD .174390 | `sepsis-v1/E3-stream.json` |
+| Sepsis BE | 4,479/4,479 prefixes | Global graph with 14 nodes and 16 directed edges | `sepsis-v1/graphs/BE-v2/manifest.json` |
+| Sepsis AE | 0 of approximately 9.5781 × 10^52 contexts | Exact full-set schedule computed from complete BE, with k min/median/p95/max 0/5/29.1/174 | `sepsis-v1/be-only-v1/coverage.json` |
 | BPIC13-CP E1 | 1,574/1,574 prefixes, 15,569 variants | Mean tau-b .245327, SD .940071, 856 valid and 718 undefined | `bpic13-cp-v1/E1.json` |
 | BPIC13-CP E2-FC | 15,740/15,740 paired prefix records | Seed mean JSD .007405–.024901 for BASE and .00482464–.00482480 for FC. Seed mean prediction TVD .048891–.082763 for BASE and .050001–.095071 for FC | `bpic13-cp-v1/E2-stream.json` |
 | BPIC13-CP E3-PAPER | 1,574/1,574 prefixes | Mean prefix TVD .222190, SD .178234 | `bpic13-cp-v1/E3-stream.json` |
@@ -48,5 +50,7 @@ Sepsis E1's bounded DFG path counter found at least204,539 variants in the12 sam
 | BPIC13-CP AE | 1/809,189,178 contexts | Incomplete. The BE pass established the exact workload over all test prefixes | `bpic13-cp-v1/explain-v1/coverage.json` |
 
 Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second session resumed from the exact source snapshot, preserving prior units. Total wall time across these sessions was 608.32 seconds. BPIC13-CP E2 used five fresh BASE and five frozen-constant seeds, with 10 epochs each. Figure files in `artifacts/figures/bpic13-cp-v2/` show the E1 distribution, the descriptive E2 scatter and the E3 distribution. Its CSV preserves the ten exact seed means when markers overlap.
+
+The BPIC13-CP discrepancy was probed against author commit `494b315a555e713bdd61f0edd7d033c31d5850bf`. `processtransformer/ml/prepare/splitter.py` lines 34–39 and 111–119 shuffle case IDs in log order and take the first floor(0.7 × N) cases for training. Applying that procedure with seed 42 to the acquired log yields the same 447 test cases as the independent sorted-ID protocol. The pinned `experiments/training/exp_bpic13_closed_problems.json` specifies 5 epochs and batch 50. A separate diagnostic kept the local dataset split, architecture, Adam settings and training seed, and adopted that schedule. Accuracy was .559720 and weighted F1 was .517447 on all 1,574 prefixes (`artifacts/bpic13-cp-v1/source-schedule/predictions.json`). This schedule alone does not close the gap to Table 2. The author's historical run configuration and checkpoint linkage remain unresolved.
 
 No author-runtime execution, historical split equivalence, BPMN alignment or user study has been established. Model fidelity, process-model structural agreement and human interpretability remain separate claims. Missing results and undefined metrics are not zeros.
