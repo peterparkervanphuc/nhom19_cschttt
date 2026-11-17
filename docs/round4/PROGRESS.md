@@ -92,3 +92,5 @@ The integrated pipeline now supports resumable streaming E1–E3 and a separate 
 Looped-AND E1 completed its audited schedule of 734,926 variants. BPIC12_WC E3 preserved 15,579 of 18,472 records through its RAM-floor and wall-time stops. Helpdesk paired evaluation began on the existing baseline, with a full-cohort upper bound of 249,912 AE contexts per model. The source for this new run is preserved at `artifacts/source-snapshots/8c4ee50/src`.
 
 Full BPIC12 completed ten epochs and passed the independent audit of all 73,742 test predictions. All twelve predictive baselines are now verified. The audited metrics, data and checkpoint hashes are in `artifacts/bpic12-v1/predictive-audit.json`.
+
+BPIC12_WC E3 completed the remaining 2,893 prefixes, then passed independent verification across all 18,472 records. Helpdesk E2 and Looped-AND E3 began with the current independent package. Helpdesk paired XAI is also in progress, with its baseline AE complete on 107,602 contexts.

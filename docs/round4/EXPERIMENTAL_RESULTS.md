@@ -93,6 +93,7 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC12_O E1 | 7,763/7,763 prefixes, 67,722 variants | Mean tau-b .712442, SD .370154, 6,197 valid and 1,566 undefined | `bpic12-o-v1/E1-stream.json` |
 | BPIC12_O E2-FC | 77,630/77,630 paired prefix records | Seed mean JSD .002668–.003713 for BASE and .00163521–.00163549 for FC. Seed mean prediction TVD .025136–.055303 for BASE and .026869–.039663 for FC | `bpic12-o-v1/E2-stream.json` |
 | BPIC12_O E3-PAPER | 7,763/7,763 prefixes | Mean prefix TVD .384329, SD .309039. All records passed the streamed-study audit | `bpic12-o-v1/E3-stream.json` |
+| BPIC12_WC E3-PAPER | 18,472/18,472 prefixes | Mean prefix TVD .111464, SD .179748. All records passed the streamed-study audit | `bpic12-wc-v1/E3-stream.json` |
 | BPIC12_O BE | 7,763/7,763 prefixes | Global graph with 7 nodes and 12 directed edges | `bpic12-o-v1/graphs/BE/manifest.json` |
 | BPIC12_O AE | 0/113,657,644 contexts | Exact workload established from the full BE pass | `bpic12-o-v1/be-only-v1/coverage.json` |
 | BPIC12_WC E1 | 18,472/18,472 prefixes, 280,907 variants | Mean tau-b .780294, SD .377938, 13,370 valid and 5,102 undefined | `bpic12-wc-v1/E1-stream.json` |
@@ -108,6 +109,8 @@ The completed BPIC12_WC E1 and Helpdesk E3 results passed the streamed-study aud
 BPIC12_O E2 resumed under the identical source snapshot after a quota stop at 54,341 records. The second session added 23,289 records in 326.53 seconds. The auditor verified all ten arms and model checkpoints. Helpdesk E1 passed the same artifact audit and matched its independently computed variant count.
 
 Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second session resumed from the exact source snapshot, preserving prior units. Total wall time across these sessions was 608.32 seconds. BPIC13-CP E2 used five fresh BASE and five frozen-constant seeds, with 10 epochs each. Figure files in `artifacts/figures/bpic13-cp-v2/` show the E1 distribution, the descriptive E2 scatter and the E3 distribution. Its CSV preserves the ten exact seed means when markers overlap.
+
+BPIC12_WC E3 completed 7,185, 8,394 and 2,893 new records across three sessions. The first session stopped at the available-RAM floor and the second at its wall-time quota. The final session used the identical source snapshot and completed all remaining units. The independent ledger audit verified coverage and aggregation from the 18,472 records in `artifacts/bpic12-wc-v1/e3-record-audit.json`.
 
 The BPIC13-CP discrepancy was also probed against author commit `494b315a555e713bdd61f0edd7d033c31d5850bf`. `processtransformer/ml/prepare/splitter.py` lines 34–39 and 111–119 shuffle case IDs in log order and take the first floor(0.7 × N) cases for training. Applying that procedure with seed 42 to the acquired log yields the same 447 test cases as the independent sorted-ID protocol. Only 129 of those cases occur in the test XES recovered from the author archive. A separate diagnostic kept the local split, architecture, Adam settings and training seed, and used 5 epochs and batch 50. Accuracy was .559720 and weighted F1 was .517447 on all 1,574 prefixes (`artifacts/bpic13-cp-v1/source-schedule/predictions.json`). Both evaluation population and target alignment differ from the archive.
 
