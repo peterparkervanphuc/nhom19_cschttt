@@ -20,7 +20,7 @@ from .algorithms import ae_contexts, ae_matrices, relevant_activities
 
 
 class CachedPredictor:
-    """Bound to one identity-verified database, with finite memory usage."""
+    """Bound to one database; the owner commits each BE prefix or AE context."""
     def __init__(self, predictor: Predictor, connection: sqlite3.Connection):
         self.predictor = predictor
         self.connection = connection
@@ -51,7 +51,6 @@ class CachedPredictor:
         payload = buffer.getvalue()
         self.connection.execute("INSERT INTO inference VALUES (?,?,?)",
                                 (key, payload, hashlib.sha256(payload).hexdigest()))
-        self.connection.commit()
         self.executions += 1
         return result
 
@@ -126,6 +125,7 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
                         write_json(directory / "coverage.json", seal(coverage))
                         return coverage
                     relevance = relevant_activities(cached, prefix)
+                    connection.commit()
                     write_json(record_path, seal(relevance))
                 local = {(source, target) for source in relevance["relevant"] for target in relevance["predictions"]}
                 snapshot = edges | local

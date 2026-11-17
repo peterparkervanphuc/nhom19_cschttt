@@ -7,8 +7,10 @@ import pytest
 
 from nhom19_process_xai.__main__ import main
 from nhom19_process_xai.artifacts import read_sealed
+from nhom19_process_xai.data.pipeline import file_hash, fingerprint
 from nhom19_process_xai.data.preparation import prepare_file
-from nhom19_process_xai.explain.runner import run_explainers
+from nhom19_process_xai.explain.runner import CachedPredictor, run_explainers
+from nhom19_process_xai.model.predictor import Predictor
 from nhom19_process_xai.model.training import TrainingConfig, train
 
 
@@ -138,3 +140,44 @@ def test_explainer_cli_accepts_resumable_wall_quota(trained_fixture, tmp_path, c
     assert paused["be_completed_prefixes"] == 0 and paused["stop_reason"] == "wall_time_quota"
     main(args)
     assert json.loads(capsys.readouterr().out)["be_status"] == "completed"
+
+
+def test_cache_writes_share_owner_transaction(trained_fixture, tmp_path):
+    data, checkpoint = trained_fixture
+    path = tmp_path / "batched-cache.sqlite"
+    with sqlite3.connect(path) as owner:
+        owner.execute("PRAGMA journal_mode=WAL")
+        cache = CachedPredictor(Predictor(checkpoint, data), owner)
+        owner.commit()
+        labels = data["prefixes"]["test"][0]["activities"]
+        cache.predict(labels)
+        cache.predict([None] * len(labels))
+        assert owner.in_transaction
+        with sqlite3.connect(path) as observer:
+            assert observer.execute("SELECT count(*) FROM inference").fetchone()[0] == 0
+        owner.commit()
+        with sqlite3.connect(path) as observer:
+            assert observer.execute("SELECT count(*) FROM inference").fetchone()[0] == 2
+
+
+def test_be_cache_is_durable_before_prefix_publication(trained_fixture, tmp_path, monkeypatch):
+    from nhom19_process_xai.explain import runner
+    data, checkpoint = trained_fixture
+    original_write = runner.write_json
+    classes = sorted(data["vocabulary"]["outputs"], key=data["vocabulary"]["outputs"].get)
+    prefixes = {row["prefix_id"]: row for row in data["prefixes"]["test"]}
+    checked = []
+
+    def checked_write(path, envelope):
+        if path.parent.name == "be-prefixes":
+            identifier = envelope["payload"]["prefix_id"]
+            key = fingerprint([file_hash(checkpoint), classes, prefixes[identifier]["activities"],
+                               [], "E3-PAPER", "cpu", "float32"])
+            with sqlite3.connect(path.parent.parent / "ledger.sqlite") as observer:
+                assert observer.execute("SELECT 1 FROM inference WHERE key=?", (key,)).fetchone() == (1,)
+            checked.append(identifier)
+        original_write(path, envelope)
+
+    monkeypatch.setattr(runner, "write_json", checked_write)
+    run_explainers(data, checkpoint, tmp_path / "publication", be_only=True)
+    assert set(checked) == prefixes.keys()
