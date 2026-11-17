@@ -1,0 +1,16 @@
+{
+  "dataset_id": "author-supplement-long-dist-dep",
+  "path": "../../data/raw/author-supplement/long-dist-dep/preprocessed.xes",
+  "format": "xes",
+  "source": "https://drive.google.com/file/d/1p-mbznaXoYI0ofqlzKGPzJ1FVcAX0Pg4/view",
+  "version": "Author supplementary archive 2024-08-12, exp_015",
+  "license": "Author-linked research supplementary material; local research copy",
+  "scope": "verified_dataset",
+  "expected_sha256": "5e25de53e0d2fd5d33807c7c934313640ffe54924672f7ef3101f17da8c15114",
+  "expected_counts": {
+    "cases": 1000,
+    "events": 7514,
+    "activities": 10
+  },
+  "seed": 42
+}
