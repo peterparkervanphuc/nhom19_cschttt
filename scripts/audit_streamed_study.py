@@ -3,9 +3,10 @@
 import argparse
 from contextlib import closing
 import json
-from math import floor
+from math import floor, fsum, isclose
 from pathlib import Path
 import sqlite3
+from statistics import median
 
 from nhom19_process_xai.artifacts import read_sealed
 from nhom19_process_xai.data.pipeline import file_hash, fingerprint
@@ -62,6 +63,22 @@ def audit_e1(db, manifest, prefixes, workload):
     return total
 
 
+def audit_masked_positions(row, occurrence_ids):
+    records = row["records"]
+    require([(record["position"], record["occurrence_id"]) for record in records] == list(enumerate(occurrence_ids)),
+            "E3 masking does not cover each prepared occurrence exactly once")
+    values = []
+    for record in records:
+        stored = record["prediction_tvd_input_vs_score"]
+        paired = zip(record["input_probabilities"], record["score_probabilities"], strict=True)
+        recomputed = fsum(abs(left - right) for left, right in paired) / 2
+        require(0 <= stored <= 1 and isclose(stored, recomputed, rel_tol=0, abs_tol=1e-12),
+                "E3 occurrence TVD differs from the recorded prediction vectors")
+        values.append(stored)
+    require(row["prediction_tvd"] == summary(values), "E3 prefix TVD summary differs from its occurrences")
+    return values
+
+
 def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
     study, profile = manifest["study"], manifest["profile"]
     schedule = (([("BASE", seed) for seed in range(2001, 2006)]
@@ -70,6 +87,7 @@ def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
             "Arms or seeds differ from the fixed schedule")
     count = 0
     bins = {}
+    position_tvd = []
     for arm in manifest["pairs"]:
         if study == "E2":
             trained = ledger.parent / "models" / f'{arm["arm"]}-{arm["seed"]}' / "checkpoint.pt"
@@ -103,6 +121,7 @@ def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
             else:
                 require(row["checkpoint"] == checkpoint and row["profile"] == profile,
                         "E3 checkpoint or profile mismatch")
+                position_tvd.extend(audit_masked_positions(row, prefixes[prefix_id]))
                 primary.append(row["prediction_tvd"]["mean"])
             count += 1
         require(ids == prefixes.keys() and arm["completed_prefixes"] == len(ids), "Study cohort incomplete")
@@ -114,7 +133,10 @@ def audit_e2_e3(db, ledger, manifest, prefixes, checkpoint):
     ledger_count = db.execute("SELECT COUNT(*) FROM records").fetchone()[0]
     require(count == ledger_count == manifest["completed_units"] == manifest["expected_units"],
             "Study unit totals disagree")
-    return count, bins
+    details = {"attention_bins_by_arm": bins} if study == "E2" else {
+        "occurrence_weighted_prediction_tvd": {**summary(position_tvd),
+                                               "median": median(position_tvd) if position_tvd else None}}
+    return count, details
 
 
 def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
@@ -125,7 +147,8 @@ def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
             "An audit requires a completed E1, E2 or E3 manifest")
     identity = manifest["identity"]
     checkpoint = file_hash(checkpoint_path)
-    prefixes = {row["prefix_id"]: list(row["activities"]) for row in prepared["prefixes"]["test"]}
+    field = "occurrence_ids" if study == "E3" else "activities"
+    prefixes = {row["prefix_id"]: list(row[field]) for row in prepared["prefixes"]["test"]}
     require(identity["study"] == study and identity["dataset"] == fingerprint(prepared)
             and identity["checkpoint"] == checkpoint == manifest["baseline_checkpoint"]
             and set(identity["prefix_ids"]) == prefixes.keys()
@@ -136,19 +159,16 @@ def audit(manifest_path, prepared_path, checkpoint_path, workload_path=None):
     ledger = manifest_path.parent / manifest["records_database"]
     require(file_hash(ledger) == manifest["records_sha256"], "Ledger SHA-256 mismatch")
     with closing(sqlite3.connect(ledger.resolve().as_uri() + "?mode=ro", uri=True)) as db:
-        bins = {}
+        details = {}
         if study == "E1":
             require(workload_path is not None, "E1 needs an independently generated exact schedule count")
             workload = read_sealed(workload_path)
             require(workload["prepared_sha256"] == file_hash(prepared_path), "E1 workload input differs")
             units = audit_e1(db, manifest, prefixes, workload["variant_count"])
         else:
-            units, bins = audit_e2_e3(db, ledger, manifest, prefixes, checkpoint)
-    result = {"status": "verified", "study": study, "prefixes": len(prefixes), "units": units,
-              "manifest_sha256": file_hash(manifest_path), "records_sha256": manifest["records_sha256"]}
-    if bins:
-        result["attention_bins_by_arm"] = bins
-    return result
+            units, details = audit_e2_e3(db, ledger, manifest, prefixes, checkpoint)
+    return {"status": "verified", "study": study, "prefixes": len(prefixes), "units": units,
+            "manifest_sha256": file_hash(manifest_path), "records_sha256": manifest["records_sha256"], **details}
 
 
 if __name__ == "__main__":
