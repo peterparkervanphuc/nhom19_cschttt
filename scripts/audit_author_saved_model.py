@@ -6,6 +6,8 @@ import json
 import lzma
 import pickletools
 import platform
+import subprocess
+import sys
 import tempfile
 from collections import Counter
 from pathlib import Path, PureWindowsPath
@@ -20,6 +22,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 
 
 ARCHIVE_SHA256 = "b1b88b2d7797fbe3369dccc5c4fe8d9a96af5d52293954279d4bab2f0bcc169e"
+AUTHOR_COMMIT = "494b315a555e713bdd61f0edd7d033c31d5850bf"
 ARCHIVED_PREFIX_COUNTS = {
     "bpic12_GPU": 75104,
     "bpic12_o_GPU": 7681,
@@ -87,7 +90,7 @@ def aligned_cases(archive, prefix_member):
     if suffix_member in archive.namelist():
         suffix_targets = {name: labels[0] for name, labels in traces(archive, suffix_member)}
         for name, labels in traces(archive, prefix_member):
-            yield labels, suffix_targets.pop(name)
+            yield name, labels, suffix_targets.pop(name)
         if suffix_targets:
             raise ValueError("Unmatched archived suffix samples")
     else:
@@ -99,7 +102,7 @@ def aligned_cases(archive, prefix_member):
             if (kind != "Case" or not 0 <= index < len(test) or length != len(labels)
                     or not 0 < length < len(test[index]) or labels != test[index][:length]):
                 raise ValueError(f"Archived prefix does not match its source case: {name}")
-            yield labels, test[index][length]
+            yield name, labels, test[index][length]
 
 
 def predictive_metrics(targets, predictions):
@@ -110,7 +113,14 @@ def predictive_metrics(targets, predictions):
     return values
 
 
-def audit(archive_path, run, loader):
+def relabel_upper_bound(targets, predictions):
+    counts = {}
+    for target, prediction in zip(targets, predictions):
+        counts.setdefault(prediction, Counter())[target] += 1
+    return sum(max(column.values()) for column in counts.values()) / len(targets)
+
+
+def audit(archive_path, run, loader, author_root=None):
     if archive_hash(archive_path) != ARCHIVE_SHA256:
         raise ValueError("The author archive differs from the verified supplement")
     if (platform.python_version(), tf.__version__, keras.__version__) != ("3.7.12", "2.6.5", "2.6.0"):
@@ -118,6 +128,17 @@ def audit(archive_path, run, loader):
     tf.config.set_visible_devices([], "GPU")
     tf.config.threading.set_inter_op_parallelism_threads(1)
     tf.config.threading.set_intra_op_parallelism_threads(1)
+    custom_objects = None
+    if loader == "keras-predict":
+        author_root = author_root.resolve()
+        git = ["git", "-C", str(author_root)]
+        if (subprocess.check_output(git + ["rev-parse", "HEAD"], text=True).strip() != AUTHOR_COMMIT
+                or subprocess.check_output(git + ["status", "--porcelain", "--untracked-files=no"], text=True)):
+            raise ValueError("Keras predict replay requires the clean, pinned author source")
+        sys.dont_write_bytecode = True
+        sys.path.insert(0, str(author_root))
+        from processtransformer.models.transformer import Transformer
+        custom_objects = {"Transformer": Transformer}
     model_directory = f"Supplementary_Material/Trained_Models/training_{run}"
     with ZipFile(archive_path) as archive, tempfile.TemporaryDirectory() as temp:
         config_member = f"{model_directory}/exp_{run}.json"
@@ -145,8 +166,8 @@ def audit(archive_path, run, loader):
             data = archive.read(f"{model_directory}/model/model/{name}")
             path.write_bytes(data)
             files[name] = hashlib.sha256(data).hexdigest()
-        if loader == "keras":
-            model = tf.keras.models.load_model(temp, compile=False)
+        if loader in {"keras", "keras-predict"}:
+            model = tf.keras.models.load_model(temp, compile=False, custom_objects=custom_objects)
             width = int(model.max_case_length.numpy())
             dtype = tf.as_dtype(model.dtype)
         else:
@@ -159,32 +180,42 @@ def audit(archive_path, run, loader):
             width = spec.shape[1] or int(model.max_case_length.numpy())
             dtype = spec.dtype
 
-        def predict(sequences):
+        def predict(sequences, margins):
             padded = tf.keras.preprocessing.sequence.pad_sequences(
                 [[inputs[label] for label in sequence] for sequence in sequences], maxlen=width
             )
             tensor = tf.convert_to_tensor(padded, dtype=dtype)
-            if loader == "keras":
-                logits = model(tensor, training=False)
+            if loader == "keras-predict":
+                logits = model.predict(padded, verbose=0)
+            elif loader == "keras":
+                logits = model(tensor, training=False).numpy()
             else:
                 logits, = predictor(**{param: tensor}).values()
-            if logits.shape.rank != 2 or logits.shape[1] != len(labels):
+                logits = logits.numpy()
+            if logits.ndim != 2 or logits.shape[1] != len(labels) or not np.isfinite(logits).all():
                 raise ValueError("Unexpected SavedModel output shape")
-            return [inverse[int(index)] for index in tf.argmax(logits, axis=1)]
+            if len(labels) >= 2:
+                top_two = np.sort(np.partition(logits, -2, axis=1)[:, -2:], axis=1).astype(np.float64)
+                margins.extend(top_two[:, 1] - top_two[:, 0])
+            return [inverse[int(index)] for index in np.argmax(logits, axis=1)]
 
         last_predictions, next_predictions = [], []
+        last_margins, next_margins = [], []
         last_targets, next_targets, batch = [], [], []
-        for prefix, next_target in aligned_cases(archive, prefix_member):
+        cases = aligned_cases(archive, prefix_member)
+        if loader == "keras-predict":
+            cases = sorted(cases, key=lambda row: row[0])
+        for _, prefix, next_target in cases:
             last_targets.append(prefix[-1])
             next_targets.append(next_target)
             batch.append(prefix)
-            if len(batch) == 32:
-                last_predictions.extend(predict([sequence[:-1] for sequence in batch]))
-                next_predictions.extend(predict(batch))
+            if len(batch) == 32 and loader != "keras-predict":
+                last_predictions.extend(predict([sequence[:-1] for sequence in batch], last_margins))
+                next_predictions.extend(predict(batch, next_margins))
                 batch.clear()
         if batch:
-            last_predictions.extend(predict([sequence[:-1] for sequence in batch]))
-            next_predictions.extend(predict(batch))
+            last_predictions.extend(predict([sequence[:-1] for sequence in batch], last_margins))
+            next_predictions.extend(predict(batch, next_margins))
         if len(last_targets) != ARCHIVED_PREFIX_COUNTS[run]:
             raise ValueError("Archived evaluation population mismatch")
         last_metrics = predictive_metrics(last_targets, last_predictions)
@@ -195,6 +226,7 @@ def audit(archive_path, run, loader):
                                             mask=tf.constant([[False, False, False]]))
     return {"scope": "archived inference replay on CPU", "archive_sha256": ARCHIVE_SHA256,
             "run": run, "loader": loader, "config_member": config_member, "prefix_member": prefix_member,
+            "author_source_commit": AUTHOR_COMMIT if loader == "keras-predict" else None,
             "next_target_source": next_target_source,
             "model_files": files, "python": platform.python_version(), "tensorflow": tf.__version__,
             "keras": keras.__version__, "sklearn": sklearn.__version__, "numpy": np.__version__,
@@ -202,6 +234,12 @@ def audit(archive_path, run, loader):
             "last_prefix_predictions": dict(Counter(last_predictions)),
             "first_suffix_predictions": dict(Counter(next_predictions)),
             "last_prefix_target_metrics": last_metrics, "first_suffix_target_metrics": next_metrics,
+            "last_prefix_relabel_accuracy_upper_bound": relabel_upper_bound(last_targets, last_predictions),
+            "first_suffix_relabel_accuracy_upper_bound": relabel_upper_bound(next_targets, next_predictions),
+            "small_top_two_logit_margins": {target: {str(limit): int(np.count_nonzero(np.asarray(values) <= limit))
+                                                    for limit in (0., 1e-7, 1e-5, .001, .01)}
+                                           for target, values in (("last_prefix", last_margins),
+                                                                  ("first_suffix", next_margins))},
             "archived_metrics": expected,
             "matches_archived_metrics": set(last_metrics) == set(expected)
             and all(abs(value - expected[key]) < 1e-12 for key, value in last_metrics.items()),
@@ -213,11 +251,14 @@ if __name__ == "__main__":
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--run", choices=ARCHIVED_PREFIX_COUNTS, default="bpic13_closed_problems_GPU")
-    parser.add_argument("--loader", choices=("signature", "keras"), default="signature")
+    parser.add_argument("--loader", choices=("signature", "keras", "keras-predict"), default="signature")
+    parser.add_argument("--author-root", type=Path, help="Required for the isolated keras-predict comparison")
     args = parser.parse_args()
+    if args.loader == "keras-predict" and args.author_root is None:
+        parser.error("--loader keras-predict requires --author-root")
     if args.output.exists():
         raise FileExistsError(args.output)
-    report = audit(args.archive, args.run, args.loader)
+    report = audit(args.archive, args.run, args.loader, args.author_root)
     with args.output.open("x", encoding="utf-8") as destination:
         json.dump(report, destination, indent=2, allow_nan=False)
         destination.write("\n")

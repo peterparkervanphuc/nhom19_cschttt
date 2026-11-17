@@ -123,6 +123,12 @@ $env:PYTHONPATH = $null
 
 The command defaults to BPIC13-CP. Pass `--run` with the archived model name suffix, such as `bpic12_o_GPU`, and use a distinct output path for each replay. The default serving signature checks the archived last-prefix target and the first-suffix target on the same samples. For Helpdesk and Sepsis the additional `--loader keras` diagnostic called the Keras model with training disabled.
 
+The isolated `keras-predict` diagnostic uses the author's pinned `Transformer` class as a Keras custom object, then calls `Model.predict` and NumPy argmax as the pinned evaluation source does. Set `$authorRoot` to the path of the author checkout. The diagnostic checks its Git revision and tracked status before importing it.
+
+```powershell
+& "$runtime/Library/bin/micromamba.exe" --no-rc run -r "$runtime/mamba-root" --prefix "$runtime/python37" python scripts/audit_author_saved_model.py --archive data/raw/author-supplement/Supplementary_Material.zip --run sepsis_GPU --loader keras-predict --author-root $authorRoot --output artifacts/author-runtime/table2-replays/sepsis_GPU-keras-predict-repeat.json
+```
+
 The paired Sequence evaluation used the command below. Its baseline graph directory was initialized from the closed standalone Sequence run by copying `BE.json`, `AE.json`, `coverage.json` and the fully checkpointed `ledger.sqlite` with hash checks. The evaluation also runs from a fresh output directory, generating its own baseline and candidate graphs. A fresh directory may take longer.
 
 ```powershell
