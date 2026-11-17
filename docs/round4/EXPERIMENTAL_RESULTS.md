@@ -1,6 +1,6 @@
 # Round 4 experimental results
 
-Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Five real-data baselines have executed on verified official inputs. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round3 and Round3.6. Every result below retains its own dataset, split, source and checkpoint identity.
+Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Six real-data baselines have executed on verified inputs. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round3 and Round3.6. Every result below retains its own dataset, split, source and checkpoint identity.
 
 | Component | Execution status | Evidence |
 |---|---|---|
@@ -28,6 +28,7 @@ The runs use the verified official version 1 archives, activity-only labels, a c
 | BPIC13 incidents | 17,402/17,402 | .7093138347 | .6971037812 | .6693827922 | 156.156451 |
 | BPIC12 O | 7,763/7,763 | .8249324235 | .8191420842 | .7993637164 | 53.697025 |
 | BPIC12 WC | 18,472/18,472 | .7770249616 | .7877327848 | .7704196948 | 184.164754 |
+| Helpdesk | 4,983/4,983 | .8164058218 | .7967088100 | .7516142831 | 35.086813 |
 
 Artifacts: artifacts/sepsis-v1/base and predictions.json; artifacts/bpic13-cp-v1/base and predictions.json. Raw acquisition and file/count checks are described in DATASET_PROVENANCE.md. No test targets were used for fitting or class-vocabulary construction.
 
@@ -36,6 +37,8 @@ BPIC13 incidents outputs use the same paths under `artifacts/bpic13-i-v1/`. Chec
 BPIC12_O outputs use `artifacts/bpic12-o-v1/`. The CLI passed the expected input hash and count checks. It retained 31,244 out of 262,200 source events with prefix `O_`, removing 8,072 of 13,087 cases. The 7,763 prediction IDs and targets matched the prepared split exactly, and sklearn reproduced the metrics. Published precision/accuracy/F1 are .96/.93/.93. The local F1 difference is −.1306 on the independent split.
 
 BPIC12_WC outputs use `artifacts/bpic12-wc-v1/`. The 18,472 prediction IDs, targets and checkpoint hash match the prepared data and baseline. Sklearn reproduced the reported metrics. Paper Table 2 gives precision/accuracy/F1 of .75/.78/.75. The local F1 difference is approximately +.0204 on the independent split.
+
+Helpdesk outputs use `artifacts/helpdesk-v1/`. All 4,983 prediction IDs, targets, checkpoint hash and sklearn scores matched. Paper Table 2 gives .74/.79/.76, with a local weighted F1 difference of about −.0084. The XES input agrees event by event with the official data on model fields. The historical run linkage remains unverified. The independent E1 workload counter reports 390,254 variants for this split.
 
 For descriptive context, the supplied paper's Table2, printed page30, reports precision/accuracy/F1=(.49,.51,.46) for Sepsis and (.69,.83,.76) for BPIC13_CP. Local F1 differences are +.1151 and −.2382, respectively. These are not controlled improvements/regressions or significance results: source implementation, split/seed, masking and other locked protocol decisions differ, and the historical training artifacts are unavailable. The BPIC13 gap needs investigation before making fidelity-to-paper claims. Local extraction is retained in artifacts/paper-table2-page30.txt; the successful extraction used installed fontTools and produced no parser warning. [Paper](https://link.springer.com/article/10.1007/s44311-025-00018-4)
 
@@ -62,9 +65,14 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC13-CP BE | 1,574/1,574 prefixes | Global graph with 3 nodes and 5 directed edges | `bpic13-cp-v1/graphs/BE/manifest.json` |
 | BPIC13-CP AE | 1/809,189,178 contexts | Incomplete. The BE pass established the exact workload over all test prefixes | `bpic13-cp-v1/explain-v1/coverage.json` |
 | BPIC13 incidents E1 | 17,402/17,402 prefixes, 304,355 variants | Mean tau-b .699499, SD .644450, 12,498 valid and 4,904 undefined | `bpic13-i-v1/E1-stream.json` |
+| BPIC13 incidents E3 | 17,402/17,402 prefixes | Mean prefix TVD .152617, SD .158701 | `bpic13-i-v1/E3-stream.json` |
 | BPIC12_O E1 | 7,763/7,763 prefixes, 67,722 variants | Mean tau-b .712442, SD .370154, 6,197 valid and 1,566 undefined | `bpic12-o-v1/E1-stream.json` |
+| BPIC12_O BE | 7,763/7,763 prefixes | Global graph with 7 nodes and 12 directed edges | `bpic12-o-v1/graphs/BE/manifest.json` |
+| BPIC12_O AE | 0/113,657,644 contexts | Exact workload established from the full BE pass | `bpic12-o-v1/be-only-v1/coverage.json` |
 
 BPIC13 incidents E1 stopped after 236,445 variants at the 240-second session limit. The saved source from commit `e67565b` was used to resume. The second session added 67,910 variants in 57.25 seconds. The final ledger SHA-256, checkpoint SHA-256, per-prefix SQLite row counts and exact schedule count agree with the manifest.
+
+BPIC13 incidents E3 completed 9,915 prefixes before its first 300-second quota, then 7,487 more in 282.28 seconds. The auditor verified every sealed prefix unit and reconstructed the reported summary. BPIC12_O graph edge membership matched the GraphML export and the SVG was visually checked.
 
 Sepsis E3 stopped at 1,199 prefixes after its first 180-second quota. The second session resumed from the exact source snapshot, preserving prior units. Total wall time across these sessions was 608.32 seconds. BPIC13-CP E2 used five fresh BASE and five frozen-constant seeds, with 10 epochs each. Figure files in `artifacts/figures/bpic13-cp-v2/` show the E1 distribution, the descriptive E2 scatter and the E3 distribution. Its CSV preserves the ten exact seed means when markers overlap.
 
