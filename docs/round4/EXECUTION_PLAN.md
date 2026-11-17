@@ -8,11 +8,11 @@ Initial audit on 2026-11-17 found main at 63b0ec745f13e89fe678b346fc1883ea56755d
 |---|---|---|
 | S0 | Exact uv 3.11.15 project venv, hash lock, imports and CPU optimizer smoke, resource inventory | CPU smoke and independent cold recreation verified; 50 tests in second venv |
 | S1 / C01 | CSV/XES adapters, filters, manifest/split/vocab/prefix, CLI prepare, 5/3 fixture and provenance gates | Input provenance and counts verified for all twelve logs. See DATASET_PROVENANCE.md for acquisition, filters and split evidence. |
-| S2 / C02–C04 | ProcessTransformer, training, checkpoint/resume, prediction and attention, numerical/gradient/mask tests | Fixture exact epoch resume; full Sepsis and BPIC13-CP baseline training/prediction executed |
+| S2 / C02–C04 | ProcessTransformer, training, checkpoint/resume, prediction and attention, numerical/gradient/mask tests | Fixture exact epoch resume. Eleven verified predictive baselines. Full BPIC12 training in progress. |
 | S3 | Numerical primitives, directed graph projection/pruning, serialization and hand-computed tests | Tests and GraphML round-trip passed; SVG inspected; paired AE–BE descriptive comparison implemented |
-| S4 / C05–C07 | Independently callable E1, E2-FC/AC/UNI, E3-PAPER/AUTHOR, fixture tests and actual runs | Primary fixture complete; E2/E3 durable streaming tested; real runs tracked in EXPERIMENTAL_RESULTS.md |
-| S5 / C08–C09 | BE and exhaustive AE with signed votes, occurrence IDs, coverage/resume and integration | Full fixture ledger/cache/resume verified; Sepsis exhaustive AE computationally infeasible under locked protocol |
-| S6 / C10–C12 | Nine XAI outputs, predictive metrics, graph export, complete fixture pipeline and dataset pilot/full runs | Full nine-stage fixture complete; real-data evaluation, plot/report coverage and remaining datasets incomplete |
+| S4 / C05–C07 | Independently callable E1, E2-FC/AC/UNI, E3-PAPER/AUTHOR, fixture tests and actual runs | Durable E1–E3 integrated and tested. Completed real and synthetic experiments are recorded in EXPERIMENTAL_RESULTS.md. |
+| S5 / C08–C09 | BE and exhaustive AE with signed votes, occurrence IDs, coverage/resume and integration | Full fixture and two archived synthetic benchmarks verified. Sepsis, Complex-Model and Looped-AND exhaustive AE exceed local resources. |
+| S6 / C10–C12 | Nine XAI outputs, predictive metrics, graph export, complete fixture pipeline and dataset pilot/full runs | Paired and BE-only pipeline scopes verified on fixtures. Paired evaluation and selected BPMN comparisons complete on Sequence and Long-Dist-Dep. Real-log Helpdesk paired evaluation in progress. |
 
 Execute S0 then S1, S2 and S3, numerical gates before integrated S4/S5 and S6. Maintain exact data/config/checkpoint identities across experiments. Each failed test requires diagnosis and rerun before advancing the affected gate. CPU reference uses torch 2.6.0+cpu. CUDA is a separate future environment profile after CPU acceptance. Explicit FPT authorization remains required for paid resources.
 
@@ -34,8 +34,8 @@ Update PROGRESS.md after each milestone. REQUIREMENTS_TRACEABILITY.md maps all c
 ## Current continuation order
 
 1. Complete feasible streaming E2/E3 real-data runs with sealed per-prefix coverage. Preserve source snapshots when code changes so a partial run can resume with its exact code identity.
-2. Use `experiment --streaming` for large E1–E3 runs. E1 can resume within a prefix and retains every evaluated variant. XAI orchestration still needs bounded execution. The in-memory `pipeline` is for feasible cohorts. Estimate AE before launching on a real log.
+2. Use `experiment --streaming` or `pipeline --streaming` for large E1–E3 runs. E1 can resume within a prefix and retains every evaluated variant. The paired evaluator requires a feasible whole-cohort AE schedule. Check the workload before launching it. Helpdesk's test length distribution bounds the schedule to 249,912 contexts per model.
 3. Finish BE separately on real logs; report exhaustive AE infeasibility without substituting capped pilot graphs. Pilot Sepsis observed k=174, requiring 2^175 contexts for one prefix alone. A cap or sampled AE is a separate diagnostic/future decision, not primary compliance.
 4. Complete adapter/resource/provenance manifest audit, required figures and published-result comparison, independent review and final handoff. Compare the recovered splits and published tables to author archive evidence, and use the recovered BPMNs for structural diagnostics.
 
-Round 4 remains incomplete. No full twelve-log reproduction, author-runtime parity, BPMN ground-truth validation or human-interpretability validation has been established.
+Round 4 remains incomplete. The two structural diagnostics cover specific archived BPMN relations. Full twelve-log reproduction, author-runtime parity and human-interpretability validation remain unverified.
