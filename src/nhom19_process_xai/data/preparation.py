@@ -1,9 +1,9 @@
 """File preparation with explicit provenance and ordered filtering."""
 
-from dataclasses import asdict, replace
+from dataclasses import replace
 from pathlib import Path
 
-from .pipeline import Event, file_hash, fingerprint, prepare, read_csv, read_xes
+from .pipeline import Event, file_hash, fingerprint, iter_xes_traces, prepare, read_csv
 from ..artifacts import seal, write_json
 
 
@@ -46,6 +46,20 @@ def preprocess(events: list[Event], filters: list[dict],
     return current, records
 
 
+def _preprocess_xes(path, timezone, filters, classifier, adapter):
+    events, totals = preprocess([], filters, classifier)
+    for trace in iter_xes_traces(path, timezone, audit=adapter):
+        selected, records = preprocess(trace, filters, classifier)
+        events.extend(selected)
+        for total, record in zip(totals, records, strict=True):
+            total["events_before"] += record["events_before"]
+            total["events_after"] += record["events_after"]
+            total["removed_cases"].extend(record["removed_cases"])
+    for total in totals:
+        total["removed_cases"].sort()
+    return events, totals
+
+
 def prepare_file(config: dict, base_directory: Path, output: Path) -> dict:
     required = {"dataset_id", "path", "format", "source", "version", "license", "scope"}
     allowed = required | {"columns", "naive_timezone", "filters", "lifecycle_classifier",
@@ -61,18 +75,19 @@ def prepare_file(config: dict, base_directory: Path, output: Path) -> dict:
     digest = file_hash(raw_path)
     if config.get("expected_sha256") and digest != config["expected_sha256"]:
         raise ValueError("Raw file checksum mismatch")
+    filters = config.get("filters", [])
+    classifier = config.get("lifecycle_classifier", False)
     if config["format"] == "csv":
         events = read_csv(raw_path, config.get("columns", {}), config.get("naive_timezone"))
         adapter = {"empty_cases": [], "trace_count": len({e.case_id for e in events})}
+        selected, filter_records = preprocess(events, filters, classifier)
     elif config["format"] == "xes":
         adapter = {}
-        events = read_xes(raw_path, config.get("naive_timezone"), audit=adapter)
+        selected, filter_records = _preprocess_xes(raw_path, config.get("naive_timezone"), filters, classifier, adapter)
     else:
         raise ValueError("Supported input formats are csv and xes")
     if file_hash(raw_path) != digest:
         raise ValueError("Source file changed during preparation")
-    selected, filter_records = preprocess(events, config.get("filters", []),
-                                          config.get("lifecycle_classifier", False))
     prepared = prepare(selected, config.get("split"), config.get("seed", 42))
     for key, value in config.get("expected_counts", {}).items():
         if key not in prepared["counts"] or prepared["counts"][key] != value:

@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Iterator, Mapping
 from zoneinfo import ZoneInfo
 
 
@@ -158,13 +158,21 @@ def read_csv(path: Path, columns: Mapping[str, str],
 def read_xes(path: Path, naive_timezone: str | None = None,
              audit: dict | None = None) -> list[Event]:
     """Read event attributes without discarding repeated events or timestamp ties."""
-    result = []
+    return [event for trace in iter_xes_traces(path, naive_timezone, audit) for event in trace]
+
+
+def iter_xes_traces(path: Path, naive_timezone: str | None = None,
+                    audit: dict | None = None) -> Iterator[list[Event]]:
+    """Read one complete trace at a time; ordinals count all source events."""
+    ordinal = 0
     case_ids = set()
     empty_cases = []
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rb") as stream:
-        for _, trace in ET.iterparse(stream, events=("end",)):
-            if trace.tag.rsplit("}", 1)[-1] != "trace":
+        entries = ET.iterparse(stream, events=("start", "end"))
+        _, root = next(entries)
+        for phase, trace in entries:
+            if phase != "end" or trace.tag.rsplit("}", 1)[-1] != "trace":
                 continue
             trace_attrs = {item.attrib.get("key"): item.attrib.get("value")
                            for item in trace if item.tag.rsplit("}", 1)[-1] != "event"}
@@ -172,7 +180,9 @@ def read_xes(path: Path, naive_timezone: str | None = None,
             if not isinstance(case_id, str) or not case_id or case_id in case_ids:
                 raise ValueError("XES trace names must be nonempty and unique")
             case_ids.add(case_id)
-            before = len(result)
+            events = []
+            trace_xml = [ET.tostring(item, encoding="unicode") for item in trace
+                         if item.tag.rsplit("}", 1)[-1] != "event"]
             for item in trace:
                 if item.tag.rsplit("}", 1)[-1] != "event":
                     continue
@@ -180,20 +190,20 @@ def read_xes(path: Path, naive_timezone: str | None = None,
                 try:
                     event = Event(case_id, attrs["concept:name"],
                                   parse_timestamp(attrs["time:timestamp"], naive_timezone),
-                                  len(result), {"event": attrs, "case": trace_attrs,
+                                  ordinal, {"event": attrs, "case": trace_attrs,
                                                 "event_xml": ET.tostring(item, encoding="unicode"),
-                                                "case_attributes_xml": [ET.tostring(a, encoding="unicode")
-                                                                        for a in trace
-                                                                        if a.tag.rsplit("}", 1)[-1] != "event"]})
+                                                "case_attributes_xml": list(trace_xml)})
                 except (KeyError, TypeError, ValueError) as error:
-                    raise ValueError(f"Invalid XES event {len(result)} in {case_id}: {error}") from error
-                result.append(event)
-            if len(result) == before:
+                    raise ValueError(f"Invalid XES event {ordinal} in {case_id}: {error}") from error
+                ordinal += 1
+                events.append(event)
+            if not events:
                 empty_cases.append(case_id)
+            root.remove(trace)
             trace.clear()
+            yield events
     if audit is not None:
         audit.update(empty_cases=sorted(empty_cases), trace_count=len(case_ids))
-    return result
 
 
 def prepare(events: Iterable[Event], assignment: dict[str, list[str]] | None = None,
