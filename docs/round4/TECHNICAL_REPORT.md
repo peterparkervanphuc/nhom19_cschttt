@@ -55,7 +55,7 @@ All twelve logs have audited next-activity predictions. A workload count describ
 
 | Log | E1 | E2-FC | E3-PAPER | BE | Exhaustive AE and evaluation |
 |---|---|---|---|---|---|
-| BPIC12 | ≥2,440,580,925 variants, storage-limited | Running on C | 10,690/73,742 persisted; RAM-floor pause on C | Running; ≥43,804 prefixes persisted | Verified partial-cohort AE lower bound ≥1.758 × 10^39 contexts. BE-only XAI variant IDs alone require ≥124.9 GB. |
+| BPIC12 | ≥2,440,580,925 variants, storage-limited | Running on C | 10,690/73,742 persisted; RAM-floor pause on C | Verified; 73,742 prefixes and 53 edges | Exact AE schedule approximately 1.0703 × 10^40 contexts; maximum k=131. BE-only XAI variant IDs alone require ≥124.9 GB. |
 | BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 contexts. At least 47.5 GB of context text, storage-limited. BE-only evaluation verified. |
 | BPIC12_W | Verified, 1,334,973 variants | Pending | Verified | Verified | Approximately 2.178 × 10^40 scheduled AE contexts; maximum k=132 |
 | BPIC12_WC | Verified | 129,784/184,720 persisted; RAM-floor pause | Verified | Verified | Approximately 5.633 × 10^19 scheduled contexts |
