@@ -87,6 +87,7 @@ BPIC13-CP streaming E1 stopped after 17 variants and then completed all 15,569 v
 | BPIC13 incidents E3 | 17,402/17,402 prefixes | Mean prefix TVD .152617, SD .158701 | `bpic13-i-v1/E3-stream.json` |
 | BPIC12_O E1 | 7,763/7,763 prefixes, 67,722 variants | Mean tau-b .712442, SD .370154, 6,197 valid and 1,566 undefined | `bpic12-o-v1/E1-stream.json` |
 | BPIC12_O E2-FC | 77,630/77,630 paired prefix records | Seed mean JSD .002668–.003713 for BASE and .00163521–.00163549 for FC. Seed mean prediction TVD .025136–.055303 for BASE and .026869–.039663 for FC | `bpic12-o-v1/E2-stream.json` |
+| BPIC12_O E3-PAPER | 7,763/7,763 prefixes | Mean prefix TVD .384329, SD .309039. All records passed the streamed-study audit | `bpic12-o-v1/E3-stream.json` |
 | BPIC12_O BE | 7,763/7,763 prefixes | Global graph with 7 nodes and 12 directed edges | `bpic12-o-v1/graphs/BE/manifest.json` |
 | BPIC12_O AE | 0/113,657,644 contexts | Exact workload established from the full BE pass | `bpic12-o-v1/be-only-v1/coverage.json` |
 | BPIC12_WC E1 | 18,472/18,472 prefixes, 280,907 variants | Mean tau-b .780294, SD .377938, 13,370 valid and 5,102 undefined | `bpic12-wc-v1/E1-stream.json` |
@@ -215,3 +216,16 @@ The same paired protocol scheduled 1,565 of the 1,957 test prefixes. Seed 3003 h
 | Compactness RHS | 5.056966 ± .573565 (1,565) | 1.319013 ± .263617 (1,565) | 3.737954 (1,565) |
 
 The BPMN's parallel-gateway paths imply two selected long-range branch relations, `A → D` and `B → E`. All 157 held-out traces ending with a branch activity follow these two relations, with 74 `A … D` and 83 `B … E`. The other 143 held-out traces end at `Z`. AE contains both selected edges and BE contains neither. Neither method contains the cross-branch pairs `A → E` and `B → D`. The diagnostic checks these selected relations and retains the event counts and graph/BPMN hashes in `artifacts/synthetic-long-dist-dep/bpmn-long-range.json`.
+
+### Complex-Model and Looped-AND workload gates
+
+| Log | Audited BE prefixes and global edges | Exact E1 variants | Exact AE contexts | Largest AE eligibility size |
+|---|---|---:|---:|---:|
+| Complex-Model | 21,555 prefixes, 26 edges | 15,755,268,423 | 405,840,441,072,787,719,568 | 64 |
+| Looped-AND | 10,873 prefixes, 10 edges | 734,926 | 1,219,192,350,409,752,944,173,595,276 | 88 |
+
+The BE-only runs took 937.51 seconds and 729.06 seconds, respectively. The audit reopened both graph artifacts, replayed merge/pruning on the complete cohorts and rebuilt the planned AE schedules. Both schedules have zero executed AE contexts. Exhaustive AE is infeasible locally for these two logs. The Complex-Model E1 count exceeds the Sepsis workload by more than sixfold. The Looped-AND E1 schedule is small enough for a bounded streaming run. Evidence is in each log folder's `explainer-audit.json`, `explain/coverage.json` and `E1-workload-counter.json`.
+
+The author's Complex-Model qualitative case names the relation between activity sets `{K,P,F,D}` and `{S,R,Q}`. All seven labels appear in the archived BPMN. The independent BE graph has `K → Q`, `K → R` and `K → S` between the named sets. The archive text specifies a group relation. The check records which independent pairwise edges connect those sets, without assuming a complete Cartesian product or running a BPMN conformance analysis. Source member `Detailed_Results/14_complex_models/complex_model_001/complex_model_001-visual_001/ground_truth_relations.txt`. [Author archive](https://drive.google.com/file/d/1p-mbznaXoYI0ofqlzKGPzJ1FVcAX0Pg4/view)
+
+Both BE SVGs were rendered and inspected. The original Looped-AND drawing had overlapping nodes. The revised circular layout and loop curves show the five nodes and all four self-loop arrowheads. `artifacts/synthetic-looped-and/graphs/BE-v3/` has identical canonical graph JSON and GraphML hashes to the original export. The checked screenshot is `artifacts/graph-qa/synthetic-looped-and-BE-v3.png`.

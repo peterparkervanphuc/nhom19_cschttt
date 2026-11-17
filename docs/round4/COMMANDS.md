@@ -75,6 +75,8 @@ For the author-supplied synthetic benchmarks, extract the exact XES members from
 & .venv/Scripts/python.exe scripts/audit_explainer_run.py --run artifacts/synthetic-sequence/explain --prepared data/processed/synthetic-sequence.json --checkpoint artifacts/synthetic-sequence/base/checkpoint.pt
 ```
 
+To audit the BE graph and the planned AE schedule without claiming AE execution, use the `--be-only` flag on this auditor.
+
 The paired Sequence evaluation used the command below. Its baseline graph directory was initialized from the closed standalone Sequence run by copying `BE.json`, `AE.json`, `coverage.json` and the fully checkpointed `ledger.sqlite` with hash checks. The evaluation also runs from a fresh output directory, generating its own baseline and candidate graphs. A fresh directory may take longer.
 
 ```powershell

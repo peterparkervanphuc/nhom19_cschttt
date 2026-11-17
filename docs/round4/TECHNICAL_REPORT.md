@@ -54,7 +54,7 @@ The [experimental results record](EXPERIMENTAL_RESULTS.md) gives artifact paths,
 | Reference and baseline boundaries | PASS | Read-only author repository. Sampling diagnostics are separate from primary schedules. |
 | Environment and dependency recreation | PASS | CPU lock installed in a second uv Python 3.11.15 environment, tests and `pip check` verified |
 | Data pipeline and twelve-log scope | PASS for the input gate | Twelve log variants have verified input provenance and counts. The author archive supplies the four synthetic XES files and reference BPMNs. Full pipeline execution remains tracked separately. |
-| Tests and end-to-end checks | PASS | 54 tests in `artifacts/s0/filtered-xes-suite.xml`. Complete fixture pipeline, interrupted E1 resume, BE-only evaluation parity, trace-wise filter audit, and checksum checks on full E2/E3 runs. |
+| Tests and end-to-end checks | PASS | 54 tests in `artifacts/s0/round4-graph-layout-suite.xml`. Complete fixture pipeline, interrupted E1 resume, BE-only evaluation parity, trace-wise filter audit, and checksum checks on full E2/E3 runs. |
 | Full feasible real experiments and comparison | PARTIAL | Seven real and four synthetic predictive baselines, several complete attention studies and two paired synthetic XAI benchmarks are verified. Remaining feasible studies and paired evaluation on real logs are open. Author-runtime execution remains unverified. |
 | Full exhaustive AE on Sepsis | BLOCKED for execution | A single prefix has 174 eligible positions. Adding ordinary local or cloud resources cannot make this schedule feasible. |
 | Commands, configuration, seeds, checkpoints | PASS for reported runs | [Commands](COMMANDS.md), versioned configs, source hashes and sealed run receipts |
