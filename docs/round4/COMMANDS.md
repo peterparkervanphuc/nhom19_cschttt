@@ -68,6 +68,13 @@ Reopen a completed streaming run using the command below. It checks the dataset 
 & .venv/Scripts/python.exe scripts/audit_streamed_study.py --manifest artifacts/bpic13-cp-v1/E1-stream.json --prepared data/processed/bpic13-cp-v1.json --checkpoint artifacts/bpic13-cp-v1/base/checkpoint.pt --workload artifacts/bpic13-cp-v1/E1-workload-counter.json
 ```
 
+For the verified BPIC12_W E1 and Sepsis E2 runs, use these read-only replays against the completed manifests.
+
+```powershell
+& .venv/Scripts/python.exe scripts/audit_streamed_study.py --manifest artifacts/bpic12-w-v1/E1-stream.json --prepared data/processed/bpic12-w-v1.json --checkpoint artifacts/bpic12-w-v1/base/checkpoint.pt --workload artifacts/bpic12-w-v1/E1-workload-counter.json
+& .venv/Scripts/python.exe scripts/audit_streamed_study.py --manifest artifacts/sepsis-v1/E2-stream.json --prepared data/processed/sepsis-v1.json --checkpoint artifacts/sepsis-v1/base/checkpoint.pt
+```
+
 For the author-supplied synthetic benchmarks, extract the exact XES members from the archive listed in [Dataset provenance](DATASET_PROVENANCE.md) to the paths expected by `configs/datasets/synthetic-*.json`. The prepare command checks the member bytes and dataset counts. Reopen a completed explainer run with the following auditor, which requires a closed SQLite ledger.
 
 ```powershell
