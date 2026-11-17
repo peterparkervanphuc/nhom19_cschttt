@@ -113,6 +113,20 @@ Use the pipeline's streaming mode to persist E1–E3 units in SQLite. If a study
 
 Completed streaming stage receipts bind the ledger to the study manifest. The E2 receipt also includes all ten arm checkpoints and training manifests.
 
+The complete Sequence log uses its verified dataset configuration and the primary training settings. This run was started with package snapshot `9bf57f8`. Use the same source snapshot, configuration and output directory on resume.
+
+```powershell
+& {
+    $previousPath = $env:PYTHONPATH
+    try {
+        $env:PYTHONPATH = (Resolve-Path artifacts/source-snapshots/9bf57f8/src).Path
+        & .venv/Scripts/python.exe -m nhom19_process_xai pipeline --dataset-config configs/datasets/synthetic-sequence.json --training-config configs/primary/training.json --output artifacts/pipeline-synthetic-sequence --streaming --study-max-seconds 1800
+    } finally {
+        $env:PYTHONPATH = $previousPath
+    }
+}
+```
+
 For a dataset whose exhaustive AE schedule exceeds available resources, append `--be-only` and use a distinct output directory. The pipeline still runs E1–E3, evaluates BE and records the AE schedules. Its completion receipt identifies the BE-only scope, and the evaluation reports paired results as unevaluated. The default mode runs both explainers and the paired evaluation.
 
 ## Archived Table 2 checkpoint replay
