@@ -33,6 +33,7 @@ The author environment pins Python 3.7.12, TensorFlow 2.6.5 and Keras 2.6.0. The
 | Sequence paired BE/AE evaluation | 2,640 scheduled prefixes. AE F1 .200579 and BE F1 .295173. Paired AE-minus-BE consistency .405572 on 1,944 valid pairs. | Exhaustive baseline and candidate graphs. Every comparison is descriptive. |
 | Sequence reference structure | BE shares 10 of 11 direct BPMN edges with 3 extras. AE shares all 11 with 34 extras. | Direct-flow agreement on the verified sequence. |
 | Long-Dist-Dep paired evaluation | 1,565 scheduled prefixes. AE F1 .249826 and BE F1 .343773. Paired AE-minus-BE consistency .630256 on 1,209 valid pairs. | AE has both selected BPMN branch edges. BE has neither. Both graph ledgers are exhaustive. |
+| BPIC12 full predictive performance | Accuracy .829771 and weighted F1 .802612 on 73,742 prefixes | An independent raw XES scan validated the split, every prefix ID and target, the checkpoint identity and sklearn metrics. |
 | BPIC12_O predictive performance | Accuracy .819142 and weighted F1 .799364 on 7,763 prefixes | The project CLI reproduced the expected filtered dataset counts and sklearn reproduced the metrics. |
 | BPIC12_W predictive performance | Accuracy .882128 and weighted F1 .880374 on 47,280 prefixes | A separate XES scan reproduced the split and all next-activity targets. Sklearn reproduced the metrics. |
 | BPIC12_WC predictive performance | Accuracy .787733 and weighted F1 .770420 on 18,472 prefixes | Complete ordered `W_` and `COMPLETE` filters with expected counts. Sklearn reproduced the metrics. |
@@ -55,7 +56,7 @@ The [experimental results record](EXPERIMENTAL_RESULTS.md) gives artifact paths,
 | Environment and dependency recreation | PASS | CPU lock installed in a second uv Python 3.11.15 environment, tests and `pip check` verified |
 | Data pipeline and twelve-log scope | PASS for the input gate | Twelve log variants have verified input provenance and counts. The author archive supplies the four synthetic XES files and reference BPMNs. Full pipeline execution remains tracked separately. |
 | Tests and end-to-end checks | PASS | 56 tests in `artifacts/s0/round4-streaming-pipeline-suite.xml`. Complete paired and BE-only fixture scopes, interrupted E1 recovery, trace-wise filter audit, and checksum checks on streamed experiments. |
-| Full feasible real experiments and comparison | PARTIAL | Seven real and four synthetic predictive baselines, several complete attention studies and two paired synthetic XAI benchmarks are verified. Remaining feasible studies and paired evaluation on real logs are open. Author-runtime execution remains unverified. |
+| Full feasible real experiments and comparison | PARTIAL | All twelve predictive baselines, several complete attention studies and two paired synthetic XAI benchmarks are verified. Remaining feasible studies and paired evaluation on real logs are open. Author-runtime execution remains unverified. |
 | Full exhaustive AE on Sepsis | BLOCKED for execution | A single prefix has 174 eligible positions. Adding ordinary local or cloud resources cannot make this schedule feasible. |
 | Commands, configuration, seeds, checkpoints | PASS for reported runs | [Commands](COMMANDS.md), versioned configs, source hashes and sealed run receipts |
 | Plan, progress, traceability and experimental record | PASS | Maintained in `docs/round4/` |

@@ -8,7 +8,7 @@ Initial audit on 2026-11-17 found main at 63b0ec745f13e89fe678b346fc1883ea56755d
 |---|---|---|
 | S0 | Exact uv 3.11.15 project venv, hash lock, imports and CPU optimizer smoke, resource inventory | CPU smoke and independent cold recreation verified; 50 tests in second venv |
 | S1 / C01 | CSV/XES adapters, filters, manifest/split/vocab/prefix, CLI prepare, 5/3 fixture and provenance gates | Input provenance and counts verified for all twelve logs. See DATASET_PROVENANCE.md for acquisition, filters and split evidence. |
-| S2 / C02–C04 | ProcessTransformer, training, checkpoint/resume, prediction and attention, numerical/gradient/mask tests | Fixture exact epoch resume. Eleven verified predictive baselines. Full BPIC12 training in progress. |
+| S2 / C02–C04 | ProcessTransformer, training, checkpoint/resume, prediction and attention, numerical/gradient/mask tests | Fixture exact epoch resume. All twelve predictive baselines verified. |
 | S3 | Numerical primitives, directed graph projection/pruning, serialization and hand-computed tests | Tests and GraphML round-trip passed; SVG inspected; paired AE–BE descriptive comparison implemented |
 | S4 / C05–C07 | Independently callable E1, E2-FC/AC/UNI, E3-PAPER/AUTHOR, fixture tests and actual runs | Durable E1–E3 integrated and tested. Completed real and synthetic experiments are recorded in EXPERIMENTAL_RESULTS.md. |
 | S5 / C08–C09 | BE and exhaustive AE with signed votes, occurrence IDs, coverage/resume and integration | Full fixture and two archived synthetic benchmarks verified. Sepsis, Complex-Model and Looped-AND exhaustive AE exceed local resources. |

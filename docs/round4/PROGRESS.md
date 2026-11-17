@@ -90,3 +90,5 @@ Complex-Model and Looped-AND completed BE and exact AE workload accounting. Both
 The integrated pipeline now supports resumable streaming E1–E3 and a separate BE-only execution scope. The tests interrupt E1 mid-prefix, resume the same output, recover an E2 publication made before the pipeline receipt, and reject a modified study ledger. A separate test verifies that BE-only completion leaves paired evaluation unevaluated and cannot resume as a paired run. The full CPU suite passed 56 tests in `artifacts/s0/round4-streaming-pipeline-suite.xml`.
 
 Looped-AND E1 completed its audited schedule of 734,926 variants. BPIC12_WC E3 preserved 15,579 of 18,472 records through its RAM-floor and wall-time stops. Helpdesk paired evaluation began on the existing baseline, with a full-cohort upper bound of 249,912 AE contexts per model. The source for this new run is preserved at `artifacts/source-snapshots/8c4ee50/src`.
+
+Full BPIC12 completed ten epochs and passed the independent audit of all 73,742 test predictions. All twelve predictive baselines are now verified. The audited metrics, data and checkpoint hashes are in `artifacts/bpic12-v1/predictive-audit.json`.
