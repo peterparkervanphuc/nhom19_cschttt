@@ -129,6 +129,12 @@ $env:PYTHONPATH = $null
 
 The command defaults to BPIC13-CP. Pass `--run` with the archived model name suffix, such as `bpic12_o_GPU`, and use a distinct output path for each replay. The default serving signature checks the archived last-prefix target and the first-suffix target on the same samples. For Helpdesk and Sepsis the additional `--loader keras` diagnostic called the Keras model with training disabled.
 
+Verify the archived preliminary-study CSVs separately from model inference. This reads the pinned ZIP, recomputes the stored quantiles over all twelve logs and checks the E2 bin of every archived row against its stored maximum attention.
+
+```powershell
+& .venv/Scripts/python.exe scripts/audit_author_prestudy.py --archive data/raw/author-supplement/Supplementary_Material.zip --output artifacts/author-runtime/prestudy-archive-audit.json
+```
+
 The isolated `keras-predict` diagnostic uses the author's pinned `Transformer` class as a Keras custom object, then calls `Model.predict` and NumPy argmax as the pinned evaluation source does. Set `$authorRoot` to the path of the author checkout. The diagnostic checks its Git revision and tracked status before importing it.
 
 ```powershell

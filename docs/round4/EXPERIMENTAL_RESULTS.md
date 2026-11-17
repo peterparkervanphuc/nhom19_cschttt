@@ -273,10 +273,17 @@ The pinned author code takes the raw modified attention maximum before L1 normal
 | Long-Dist-Dep | 7,422 / 6,148 / 3,000 / 3,000 | 16,570 / 3,000 / 0 / 0 | 7,422 / 6,148 / 3,000 / 3,000 |
 | BPIC12_O | 14,991 / 29,309 / 18,255 / 15,075 | 62,580 / 15,050 / 0 / 0 | 11,035 / 26,428 / 17,143 / 15,061 |
 | Helpdesk | 1,995 / 9,192 / 7,443 / 31,200 | 36,090 / 13,740 / 0 / 0 | 1,420 / 8,877 / 7,045 / 30,046 |
+| Looped-AND | 89,665 / 9,765 / 4,650 / 4,650 | 104,080 / 4,650 / 0 / 0 | 80,801 / 9,515 / 3,519 / 4,185 |
 
-The raw and normalized summaries place the same pairs in different bins. The archive contains rendered maximum-attention plots, while the exact generating records for the paper's Figure 5 remain unverified. The independent counts are in each log directory's `E2-bin-audit.json`.
+The raw and normalized summaries place the same pairs in different bins. The archived violin input audit below checks the author's binned rows. The independent counts are in each log's `E2-bin-audit.json` or `e2-record-audit.json`.
 
 For Helpdesk, a second pass over the 49,830 verified E2 records recomputed the bins and TVD filter. Within the filtered cohort, 23,214 BASE and 6,832 frozen-constant records are in the highest raw bin. No record reaches that bin after L1 normalization. The receipt includes separate counts for both arms and the hash of the audited ledger.
+
+### Archived preliminary-study results
+
+The pinned supplement contains 96 CSVs for E1–E3 across twelve logs. The auditor checked their hashes and recomputed the stored quantiles. It found 15,391 finite Kendall correlations among 15,521 E1 rows, five `seed` and five `uniform` E2 model summary rows per log, and 397,068 occurrence-level E3 TVDs. The author's `violins()` reads each `attn_uniform_weights_attn.csv` directly. Every stored raw maximum maps to its recorded bin. From low to high, the pooled counts are **37,280 / 600 / 154 / 43,507**, with 99.08% in the extremes. The CSVs contain the retained JSD values and raw maxima. They omit pair-level TVD and model identity, so filter membership and model-specific counts cannot be recalculated from them. The combined Figure 5 SVG is absent from the supplement. [Paper Figure 5](https://link.springer.com/article/10.1007/s44311-025-00018-4#Fig5) · [Pinned plotting source](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/processtransformer/xai/metrics/run_exp/replot_nn_exps.py#L144-L176)
+
+Archived E1 median tau is .639763 for Helpdesk, .680000 for Looped-AND and .677296 for Sequence. The archived E2 mean prediction TVD across the five `seed` models is .00002087 on Sequence and .00013651 on Long-Dist-Dep. The independent studies also found small mean prediction changes for these two logs. The pinned study runner builds a distinct-sequence pool and samples indices with replacement, with an upper limit of 2,000 draws. The archived CSVs omit the sampled prefix IDs. The independent protocol preserves every scheduled test-prefix ID and uses a frozen-constant arm, so differences between the two sets of statistics remain descriptive. The archive receipt is `artifacts/author-runtime/prestudy-archive-audit.json`. [Pinned sampling source](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/processtransformer/xai/metrics/run_through_nn_metrics.py#L118-L130)
 
 ### Sequence BPMN comparison
 
