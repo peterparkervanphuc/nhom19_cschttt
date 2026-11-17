@@ -126,3 +126,5 @@ The current full suite passed 58 tests in 23.23 seconds and dependency validatio
 Standalone E2/E3 accepted non-finite positive wall quotas, which could bypass the time limit. Regression tests reproduced the issue before model loading for NaN and infinity. The runner now requires a finite positive quota, matching E1 and the pipeline. The full suite passed 64 tests in 20.72 seconds, recorded in `artifacts/s0/round4-finite-quota-suite.xml`. Existing finite-quota runs use their preserved source snapshots.
 
 BPIC12_W E3 passed its final audit across 47,280 prefixes and 774,557 masked occurrences. BPIC13 incidents E2 passed all 174,020 paired records and all ten modified checkpoints. Their original source snapshots preserved exact session resumption. New runs for BPIC12_W BE and Complex-Model E2 use the source snapshot from `f6d7c71`. BPIC12_WC E2 continues on `9bf57f8`.
+
+BPIC13 incidents E1–E3 figures passed source/output checksum verification and visual inspection of all three PNGs. The figure manifest and exact E2 seed table are under `artifacts/figures/bpic13-i-v1/`. The original repository remains clean at the pinned reference commit.

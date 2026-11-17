@@ -311,6 +311,8 @@ For E3, the archive records one TVD per masked occurrence. The independent prima
 
 All eleven independent rows above passed occurrence-ID alignment and per-occurrence TVD recomputation, followed by exact reconstruction of the stored prefix summaries. The occurrence-weighted distributions supplement the primary equal-prefix summaries. The archived values describe different sampled cohorts and the source masking implementation.
 
+The completed BPIC13 incidents E1–E3 figures are in `artifacts/figures/bpic13-i-v1/`. All seven PNG, SVG and CSV digests and the three source-manifest digests match the sealed figure manifest. The three PNGs were visually inspected: axes, units and titles are readable, E1 identifies its 12,498 valid correlations out of 17,402 prefixes, and E3 identifies equal-prefix weighting. The E2 seed points are descriptive; overlapping markers do not establish statistical significance. The companion CSV preserves all ten exact seed values.
+
 ### Sequence BPMN comparison
 
 The archived `longer_sequence.bpmn` contains 12 tasks and no gateways. The diagnostic maps each BPMN name `X` to the XES activity label `Activity X` and takes the 11 direct task-to-task sequence flows. After excluding the start and end events, those flows match the complete observed activity sequence in both independent splits. BE shares 10 edges with the reference, adds 3 and misses 1 (Jaccard .714286). AE shares all 11 and adds 34 (Jaccard .244444). The edge lists and exact source hashes are in `artifacts/synthetic-sequence/bpmn-structure.json`. This checks agreement with the reference sequence. An explainer edge can also encode an earlier activity's contribution to a later prediction. Human interpretability remains untested.
