@@ -55,17 +55,17 @@ All twelve logs have audited next-activity predictions. A workload count describ
 
 | Log | E1 | E2-FC | E3-PAPER | BE | Exhaustive AE and evaluation |
 |---|---|---|---|---|---|
-| BPIC12 | ≥2,440,580,925 variants, storage-limited | Pending | 10,036/73,742 persisted; RAM-floor pause on C | Pending | AE workload check pending. BE-only XAI variant IDs alone require ≥124.9 GB. |
+| BPIC12 | ≥2,440,580,925 variants, storage-limited | Running on C | 10,690/73,742 persisted; RAM-floor pause on C | Running; ≥43,804 prefixes persisted | Verified partial-cohort AE lower bound ≥1.758 × 10^39 contexts. BE-only XAI variant IDs alone require ≥124.9 GB. |
 | BPIC12_O | Verified | Verified | Verified | Verified | 113,657,644 contexts. At least 47.5 GB of context text, storage-limited. BE-only evaluation verified. |
-| BPIC12_W | Verified, 1,334,973 variants | Pending | Verified | Running | BE workload check underway |
-| BPIC12_WC | Verified | 77,590/184,720 persisted; RAM-floor pause | Verified | Verified | Approximately 5.633 × 10^19 scheduled contexts |
+| BPIC12_W | Verified, 1,334,973 variants | Pending | Verified | Verified | Approximately 2.178 × 10^40 scheduled AE contexts; maximum k=132 |
+| BPIC12_WC | Verified | 129,784/184,720 persisted; RAM-floor pause | Verified | Verified | Approximately 5.633 × 10^19 scheduled contexts |
 | BPIC13_CP | Verified | Verified | Verified | Verified | 809,189,178 contexts. At least 241 GB of context text, storage-limited. BE-only evaluation verified. |
 | BPIC13 incidents | Verified | Verified | Verified | Verified | Approximately 1.595 × 10^37 scheduled contexts. BE-only evaluation verified. |
 | Helpdesk | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
 | Sepsis | 15,000 of 2,425,371,457 variants persisted | Verified | Verified | Verified | Approximately 9.578 × 10^52 scheduled contexts. BE-only XAI variant IDs alone require ≥120.4 GB. |
-| Complex-Model | 15,755,268,423 variants scheduled | 23,809/215,550 persisted; RAM-floor pause | Verified | Verified | Approximately 4.058 × 10^20 scheduled contexts. BE-only XAI variant IDs alone require ≥808.3 GB. |
+| Complex-Model | 15,755,268,423 variants scheduled | 141,987/215,550 persisted; RAM-floor pause | Verified | Verified | Approximately 4.058 × 10^20 scheduled contexts. BE-only XAI variant IDs alone require ≥808.3 GB. |
 | Long-Dist-Dep | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
-| Looped-AND | Verified | Verified | Verified | Verified | Approximately 1.219 × 10^27 scheduled contexts |
+| Looped-AND | Verified | Verified | Verified | Verified | Approximately 1.219 × 10^27 scheduled contexts. BE-only evaluation verified. |
 | Sequence | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
 
 ## Acceptance and handoff

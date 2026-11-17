@@ -1,5 +1,7 @@
 # Round 4 experimental results
 
+**Reproduction gate: PARTIALLY COMPLETE.** See [the actual E1–E3 comparison](REPRODUCTION_COMPARISON.md). Software verification does not close missing experimental or historical-protocol requirements.
+
 Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. All twelve independent predictive baselines have been trained and verified. Full twelve-log experimental coverage remains incomplete. The primary schedule and diagnostic profiles are defined in Round 3 and Round 3.6. Every result below retains its own dataset, split, source and checkpoint identity.
 
 The strengthened XAI audit reconstructed the nine per-prefix metrics from stored intermediates on BPIC13-CP and BPIC12_O BE-only evaluations, the Helpdesk, Sequence and Long-Dist-Dep paired evaluations, and the integrated Sequence repeat: 29,131 method records in total, including the repeat. It also checked projections against the saved global graphs and candidate Jaccard overlaps. Independent pair counting reproduced Kendall tau-b with ties and undefined cases preserved. The six `evaluation-derivation-audit.json` receipts retain the auditor hash. This verifies recorded metric arithmetic and graph alignment; it does not replay each model inference.

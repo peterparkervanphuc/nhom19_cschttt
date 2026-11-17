@@ -52,6 +52,12 @@ The complete cross-log comparison currently has **63 metric rows**: nine E1 medi
 - E3-PAPER zeros query/key entries after softmax. The pinned author masking operates before softmax, with separately tested Keras behavior on fully masked rows. The same TVD units do not remove this manipulation difference.
 - CPU/GPU execution, unrecovered historical seeds and checkpoint/population differences remain possible contributors. Their individual causal effects have not been isolated.
 
+## Completed full Helpdesk initializer diagnostic
+
+E2-AC completed and passed the full 49,830-pair audit. Its five BASE checkpoint hashes and aggregate summaries match the primary FC experiment exactly; no BASE training was repeated. The remaining five models were actually trained with frozen Glorot-initialized attention. Across those five models, mean JSD was .078390 and mean TVD .041529, compared with .078434 and .043597 for FC. The JSD change is approximately −.0000443 and the TVD change −.0020681. The unchanged dimensions, cohort and BASE arm make this a controlled independent initializer comparison. It is not an exact historical replication: the archived uniform-arm mean JSD remains approximately 7.17e−8. Initializer choice alone therefore does not explain the observed gap in this configuration.
+
+Exact differences and hashes are in `artifacts/helpdesk-v1/e2-ac-fc-comparison.json`; complete execution evidence is `E2-AC-stream.json`, `E2-AC-reuse.json` and `e2-ac-record-audit.json` in that directory. This diagnostic is separate from the eight completed primary E2-FC studies.
+
 ## Completion gate
 
 Real experiments, complete BE/AE graphs and real evaluation outputs exist on the documented cohorts. Nine E1, eight E2 and eleven E3 primary log studies are complete at this snapshot. The full twelve-log matrix is unfinished, and several exhaustive schedules exceed measured local storage or computational feasibility. BE/AE Table 3 comparisons and their different denominators are in [Experimental results](EXPERIMENTAL_RESULTS.md).
