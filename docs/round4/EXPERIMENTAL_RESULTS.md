@@ -153,6 +153,20 @@ All four independent baselines used the same primary CPU training schedule as th
 
 The tables use `artifacts/synthetic-{sequence,long-dist-dep,complex-model,looped-and}/`. Sequence E2 resumed from 32,336 records, adding the final 664. All six E1–E3 manifests for Sequence and Long-Dist-Dep passed the streamed-study audit. For both baselines, `explainer-audit.json` records hashes of the BE/AE artifacts and ledger. The audit replayed BE merges and pruning and checked every AE subset key, intervention mask, vote occurrence and checksum before regenerating the aggregate matrices and graph from the stored votes.
 
+The measured E1–E3 plots for both logs are in `artifacts/figures/synthetic-sequence/` and `artifacts/figures/synthetic-long-dist-dep/`. The PNGs were visually checked. Each plot folder contains SVGs, a ten-seed E2 CSV and source-hash manifest. Very small Sequence E2 TVDs plot close to the horizontal zero line. The CSV retains all ten exact values.
+
+### E2 maximum-attention diagnostic
+
+The pinned author code takes the raw modified attention maximum before L1 normalization, computes JSD after normalization, and retains a record for the author's bin plot only when prediction TVD ≤ .1. The independent E2 stores both maxima and the filter flag on every pair. The bins below follow the author's edges at .25, .50 and .75, with 1 in the top bin. [Pinned source](https://github.com/mkaep/transformer-explainability/blob/494b315a555e713bdd61f0edd7d033c31d5850bf/processtransformer/xai/metrics/attn_uniform_weights.py#L89-L119)
+
+| Log | Raw maximum, all pairs | L1-normalized maximum, all pairs | Raw maximum, TVD ≤ .1 |
+|---|---|---|---|
+| Sequence | 13,500 / 12,000 / 3,900 / 3,600 | 30,000 / 3,000 / 0 / 0 | 13,500 / 12,000 / 3,900 / 3,600 |
+| Long-Dist-Dep | 7,422 / 6,148 / 3,000 / 3,000 | 16,570 / 3,000 / 0 / 0 | 7,422 / 6,148 / 3,000 / 3,000 |
+| BPIC12_O | 14,991 / 29,309 / 18,255 / 15,075 | 62,580 / 15,050 / 0 / 0 | 11,035 / 26,428 / 17,143 / 15,061 |
+
+The raw and normalized summaries place the same pairs in different bins. The archive contains rendered maximum-attention plots, while the exact generating records for the paper's Figure 5 remain unverified. The independent counts are in each log directory's `E2-bin-audit.json`.
+
 ### Sequence BPMN comparison
 
 The archived `longer_sequence.bpmn` contains 12 tasks and no gateways. The diagnostic maps each BPMN name `X` to the XES activity label `Activity X` and takes the 11 direct task-to-task sequence flows. After excluding the start and end events, those flows match the complete observed activity sequence in both independent splits. BE shares 10 edges with the reference, adds 3 and misses 1 (Jaccard .714286). AE shares all 11 and adds 34 (Jaccard .244444). The edge lists and exact source hashes are in `artifacts/synthetic-sequence/bpmn-structure.json`. This checks agreement with the reference sequence. An explainer edge can also encode an earlier activity's contribution to a later prediction. Human interpretability remains untested.
