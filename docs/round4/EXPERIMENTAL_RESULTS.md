@@ -331,6 +331,8 @@ For E3, the archive records one TVD per masked occurrence. The independent prima
 
 All eleven independent rows above passed occurrence-ID alignment and per-occurrence TVD recomputation, followed by exact reconstruction of the stored prefix summaries. The occurrence-weighted distributions supplement the primary equal-prefix summaries. The archived values describe different sampled cohorts and the source masking implementation.
 
+Seven logs also passed direct comparison with the full baseline attention tensors already retained in their closed BE caches: BPIC13-CP, BPIC12_O, Helpdesk, Sepsis, Sequence, Long-Dist-Dep and Looped-AND. Across 34,929 prefixes and 302,195 masking occurrences, the auditor reconstructed all recorded attention displacement fields, including the row-normalized TVDs, from those tensors. These `e3-attention-reference-audit.json` receipts add explicit baseline-tensor references and cache hashes without duplicating arrays or rerunning inference. This additional check remains pending for the other logs.
+
 The completed BPIC13 incidents E1–E3 figures are in `artifacts/figures/bpic13-i-v1/`. All seven PNG, SVG and CSV digests and the three source-manifest digests match the sealed figure manifest. The three PNGs were visually inspected: axes, units and titles are readable, E1 identifies its 12,498 valid correlations out of 17,402 prefixes, and E3 identifies equal-prefix weighting. The E2 seed points are descriptive; overlapping markers do not establish statistical significance. The companion CSV preserves all ten exact seed values.
 
 ### Sequence BPMN comparison

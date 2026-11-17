@@ -113,6 +113,12 @@ For the verified BPIC12_W E1 and Sepsis E2 runs, use these read-only replays aga
 & .venv/Scripts/python.exe scripts/audit_streamed_study.py --manifest artifacts/sepsis-v1/E2-stream.json --prepared data/processed/sepsis-v1.json --checkpoint artifacts/sepsis-v1/base/checkpoint.pt
 ```
 
+For E3-PAPER, add `--baseline-cache` pointing to a closed BE inference ledger for the same checkpoint and full cohort. This links each E3 prefix to its retained baseline probability and attention tensor, verifies the cache checksum and recomputes every attention displacement and row-normalized TVD. It does not execute model inference or duplicate the tensors. Preserve the referenced cache with the E3 result and its audit receipt.
+
+```powershell
+& .venv/Scripts/python.exe scripts/audit_streamed_study.py --manifest artifacts/bpic13-cp-v1/E3-stream.json --prepared data/processed/bpic13-cp-v1.json --checkpoint artifacts/bpic13-cp-v1/base/checkpoint.pt --baseline-cache artifacts/bpic13-cp-v1/explain-v1/ledger.sqlite
+```
+
 For the author-supplied synthetic benchmarks, extract the exact XES members from the archive listed in [Dataset provenance](DATASET_PROVENANCE.md) to the paths expected by `configs/datasets/synthetic-*.json`. The prepare command checks the member bytes and dataset counts. Reopen a completed explainer run with the following auditor, which requires a closed SQLite ledger.
 
 ```powershell
