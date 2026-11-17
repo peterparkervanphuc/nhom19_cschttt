@@ -43,7 +43,8 @@ def _write_graph(explanation_path: Path, output: Path) -> dict:
                               "edges": edges, "scope": "global-test-prefix-graph",
                               "explanation_sha256": file_hash(explanation_path)}))
     atomic_write(paths[1], lambda path: nx.write_graphml(graph, path))
-    circular = len(graph) > 6
+    self_loops = list(nx.nodes_with_selfloops(graph))
+    circular = len(graph) > 6 or len(self_loops) > 1
     size = max(8, len(graph) * .67)
     figure, axes = plt.subplots(figsize=(size, size) if circular else (6, 4))
     if graph:
@@ -54,14 +55,14 @@ def _write_graph(explanation_path: Path, output: Path) -> dict:
                          connectionstyle="arc3,rad=0.08")
         # NetworkX's default self-loop can disappear beneath large fixed-size
         # nodes. Use an explicit outward curve and reserve plot margins.
-        for node in nx.nodes_with_selfloops(graph):
+        for node in self_loops:
             x, y = positions[node]
             if circular:
                 # The circular layout places the nodes on a unit-radius ring.
                 # Curve each self-loop away from the other nodes and edges.
                 points = [(x + radial * x - lateral * y, y + radial * y + lateral * x)
-                          for radial, lateral in [(0.07, -0.07), (0.38, -0.18),
-                                                  (0.38, 0.18), (0.07, 0.07)]]
+                          for radial, lateral in [(0.10, -0.17), (0.44, -0.24),
+                                                  (0.44, 0.24), (0.10, 0.17)]]
             else:
                 points = [(x - .12, y + .10), (x - .55, y + .65),
                           (x + .55, y + .65), (x + .12, y + .10)]
