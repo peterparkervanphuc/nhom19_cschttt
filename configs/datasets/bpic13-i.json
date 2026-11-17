@@ -1,0 +1,16 @@
+{
+  "dataset_id": "bpic13-i-4tu-v1",
+  "path": "../../data/raw/bpic13-i-v1/BPI_Challenge_2013_incidents.xes.gz",
+  "format": "xes",
+  "source": "https://doi.org/10.4121/uuid:500573e6-accc-4b0c-9576-aa5468b10cee",
+  "version": "1",
+  "license": "4TU General Terms of Use, August 2016; attribution and noncommercial research",
+  "scope": "verified_dataset",
+  "expected_sha256": "6ec2136c607648608655802486df97a866f351668751b7ecbca51e1f8715d522",
+  "expected_counts": {
+    "cases": 7554,
+    "events": 65533,
+    "activities": 4
+  },
+  "seed": 42
+}

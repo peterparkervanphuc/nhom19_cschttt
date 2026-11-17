@@ -1,0 +1,12 @@
+{
+  "dataset_id": "sepsis-4tu-v1",
+  "path": "../../data/raw/sepsis-v1/Sepsis Cases - Event Log.xes.gz",
+  "format": "xes",
+  "source": "https://doi.org/10.4121/uuid:915d2bfb-7e84-49ad-a286-dc35f063a460",
+  "version": "1",
+  "license": "4TU General Terms of Use, August 2016; attribution and noncommercial research",
+  "scope": "verified_dataset",
+  "expected_sha256": "709c52340306415952811b9b9c5dc6bcc8f8d47d583eba39df9a538459dc543a",
+  "expected_counts": {"cases": 1050, "events": 15214, "activities": 16},
+  "seed": 42
+}
