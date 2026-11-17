@@ -62,7 +62,7 @@ All twelve logs have audited next-activity predictions. A workload count describ
 | Sepsis | 15,000 of 2,425,371,457 variants persisted | Verified | Verified | Verified | Approximately 9.578 × 10^52 scheduled contexts. BE-only XAI variant IDs alone require ≥120.4 GB. |
 | Complex-Model | 15,755,268,423 variants scheduled | Pending | Verified | Verified | Approximately 4.058 × 10^20 scheduled contexts. BE-only XAI variant IDs alone require ≥808.3 GB. |
 | Long-Dist-Dep | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
-| Looped-AND | Verified | Pending | Verified | Verified | Approximately 1.219 × 10^27 scheduled contexts |
+| Looped-AND | Verified | Verified | Verified | Verified | Approximately 1.219 × 10^27 scheduled contexts |
 | Sequence | Verified | Verified | Verified | Verified | Baseline and candidate AE and all nine paired outputs verified |
 
 ## Acceptance and handoff
