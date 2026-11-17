@@ -1,6 +1,6 @@
 # Round 4 experimental results
 
-Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Two official real-data baselines and bounded pilots have executed. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round3 and Round3.6. Every result below retains its own dataset, split, source and checkpoint identity.
+Software fixture integration is complete, including E1–E3, BE/AE and all nine XAI outputs. Three official real-data baselines and bounded pilots have executed. Full twelve-log reproduction remains incomplete. The primary schedule and diagnostic profiles are defined in Round3 and Round3.6. Every result below retains its own dataset, split, source and checkpoint identity.
 
 | Component | Execution status | Evidence |
 |---|---|---|
@@ -19,14 +19,17 @@ The XAI fixture cohort is the same two prefixes for both methods. BE completenes
 
 ## Real-data baselines
 
-Both use the verified official version1 originals, activity-only labels, case-level random70/30 seed42 and train seed1729; CPU float32,10 epochs,batch12,Adam lr.001. These are independent splits and implementations, not recovered author checkpoints.
+All three use the verified official version 1 originals, activity-only labels, a case-level random 70/30 split with seed 42 and training seed 1729. They use CPU float32, 10 epochs, batch size 12 and Adam with learning rate .001. These runs used independently generated checkpoints.
 
 | Log | Test prefixes completed/expected | Weighted precision | Accuracy/weighted recall | Weighted F1 | Training wall seconds |
 |---|---:|---:|---:|---:|---:|
 | Sepsis | 4,479/4,479 | .6445562480 | .6070551462 | .5750634064 | 88.211886 |
 | BPIC13 closed problems | 1,574/1,574 | .4916116862 | .5654383736 | .5217793991 | 19.217390 |
+| BPIC13 incidents | 17,402/17,402 | .7093138347 | .6971037812 | .6693827922 | 156.156451 |
 
 Artifacts: artifacts/sepsis-v1/base and predictions.json; artifacts/bpic13-cp-v1/base and predictions.json. Raw acquisition and file/count checks are described in DATASET_PROVENANCE.md. No test targets were used for fitting or class-vocabulary construction.
+
+BPIC13 incidents outputs use the same paths under `artifacts/bpic13-i-v1/`. Checkpoint SHA-256 and all target/prefix IDs were verified. Independent sklearn metrics agreed with the sealed record. Paper Table 2 gives precision/accuracy/F1 of .50/.69/.57 for BPIC13-I. The local weighted F1 gap is approximately +.0994 on the independent split, with historical checkpoint linkage still unknown.
 
 For descriptive context, the supplied paper's Table2, printed page30, reports precision/accuracy/F1=(.49,.51,.46) for Sepsis and (.69,.83,.76) for BPIC13_CP. Local F1 differences are +.1151 and −.2382, respectively. These are not controlled improvements/regressions or significance results: source implementation, split/seed, masking and other locked protocol decisions differ, and the historical training artifacts are unavailable. The BPIC13 gap needs investigation before making fidelity-to-paper claims. Local extraction is retained in artifacts/paper-table2-page30.txt; the successful extraction used installed fontTools and produced no parser warning. [Paper](https://link.springer.com/article/10.1007/s44311-025-00018-4)
 
@@ -34,7 +37,7 @@ For descriptive context, the supplied paper's Table2, printed page30, reports pr
 
 Sepsis diagnostic pilot selected12 prefixes at deterministic length quantiles, including the length184 maximum. It completed286 contexts,433 forwards and63 cache hits in7.557264s, with process-lifetime peak working set382,783,488 bytes. k sample min/median/p95/max=0/5/89.3/174. This is deliberately stratified, not a representative estimate of the full k distribution. One observed prefix requires 2^175 contexts (about4.789×10^52); that alone is a lower bound for full-log AE. Exhaustive AE primary is computationally infeasible under the locked protocol. No global AE graph or primary nine-metric summary is exported from this pilot.
 
-BPIC13-CP diagnostic pilot has k sample max26 and expected contexts134,219,012 across just12 selected prefixes. Its bounded run took2.019184s. Full-log expected contexts remain unknown. Do not extrapolate a complete graph or a full-runtime estimate from the first numeric subsets of the mostly-masked arm.
+The BPIC13-CP pilot observed max k of 26 and 134,219,012 expected contexts across 12 selected prefixes. Its bounded run took 2.019184 seconds. The subsequent full BE pass established the full-log count of 809,189,178. The pilot's first numeric subsets of the mostly-masked arm cannot estimate a complete graph or full runtime.
 
 Sepsis E1's bounded DFG path counter found at least 204,539 variants in the 12 sampled prefixes. Extending the capped count to all 4,479 test prefixes gave a lower bound of 44,724,588 variants, with 81 neighbor pairs censored. An exact count using memoized visited subsets for simple directed paths gave **2,425,371,457** scheduled variants after adding masks and boundary replacements and excluding identity paths. The count is recorded under `artifacts/sepsis-v1/E1-workload-counter.json`.
 
