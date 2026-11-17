@@ -227,8 +227,11 @@ The pinned author code takes the raw modified attention maximum before L1 normal
 | Sequence | 13,500 / 12,000 / 3,900 / 3,600 | 30,000 / 3,000 / 0 / 0 | 13,500 / 12,000 / 3,900 / 3,600 |
 | Long-Dist-Dep | 7,422 / 6,148 / 3,000 / 3,000 | 16,570 / 3,000 / 0 / 0 | 7,422 / 6,148 / 3,000 / 3,000 |
 | BPIC12_O | 14,991 / 29,309 / 18,255 / 15,075 | 62,580 / 15,050 / 0 / 0 | 11,035 / 26,428 / 17,143 / 15,061 |
+| Helpdesk | 1,995 / 9,192 / 7,443 / 31,200 | 36,090 / 13,740 / 0 / 0 | 1,420 / 8,877 / 7,045 / 30,046 |
 
 The raw and normalized summaries place the same pairs in different bins. The archive contains rendered maximum-attention plots, while the exact generating records for the paper's Figure 5 remain unverified. The independent counts are in each log directory's `E2-bin-audit.json`.
+
+For Helpdesk, a second pass over the 49,830 verified E2 records recomputed the bins and TVD filter. Within the filtered cohort, 23,214 BASE and 6,832 frozen-constant records are in the highest raw bin. No record reaches that bin after L1 normalization. The receipt includes separate counts for both arms and the hash of the audited ledger.
 
 ### Sequence BPMN comparison
 
