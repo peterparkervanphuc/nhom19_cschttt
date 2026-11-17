@@ -21,9 +21,12 @@ from .algorithms import ae_contexts, ae_matrices, relevant_activities
 
 class CachedPredictor:
     """Bound to one database; the owner commits each BE prefix or AE context."""
-    def __init__(self, predictor: Predictor, connection: sqlite3.Connection):
+    def __init__(self, predictor: Predictor, connection: sqlite3.Connection, policy: str = "all"):
+        if policy not in {"all", "baseline"}:
+            raise ValueError("Unknown cache policy")
         self.predictor = predictor
         self.connection = connection
+        self.policy = policy
         self.class_order = predictor.class_order
         self.checkpoint_id = predictor.checkpoint_id
         self.hits = 0
@@ -31,6 +34,10 @@ class CachedPredictor:
         connection.execute("CREATE TABLE IF NOT EXISTS inference (key TEXT PRIMARY KEY, payload BLOB, checksum TEXT)")
 
     def predict(self, activities, intervention_positions=(), mode="E3-PAPER"):
+        if self.policy == "baseline" and (any(label is None for label in activities) or intervention_positions):
+            result = self.predictor.predict(activities, intervention_positions, mode)
+            self.executions += 1
+            return result
         key = fingerprint([self.checkpoint_id, self.class_order, list(activities),
                            list(intervention_positions), mode, "cpu", "float32"])
         cached = self.connection.execute("SELECT payload, checksum FROM inference WHERE key=?", (key,)).fetchone()
@@ -57,7 +64,9 @@ class CachedPredictor:
 
 def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
                    stop_after_contexts: int | None = None, *, be_only: bool = False,
-                   max_seconds: float | None = None) -> dict:
+                   max_seconds: float | None = None, cache_policy: str = "all") -> dict:
+    if cache_policy not in {"all", "baseline"}:
+        raise ValueError("Unknown cache policy")
     if be_only and stop_after_contexts is not None:
         raise ValueError("A BE-only run cannot set an AE context quota")
     if stop_after_contexts is not None and stop_after_contexts < 1:
@@ -68,7 +77,8 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
     prefixes = sorted(prepared["prefixes"]["test"], key=lambda prefix: prefix["prefix_id"])
     identity = {"checkpoint": predictor.checkpoint_id, "dataset": fingerprint(prepared),
                 "source": source_hash(), "prefix_ids": [prefix["prefix_id"] for prefix in prefixes],
-                "class_order": predictor.class_order, "be_profile": "BE-P1", "ae_profile": "D07-D08"}
+                "class_order": predictor.class_order, "be_profile": "BE-P1", "ae_profile": "D07-D08",
+                "cache_policy": cache_policy}
     identity = json.loads(json.dumps(identity))
     with run_lock(directory), closing(sqlite3.connect(directory / "ledger.sqlite")) as connection:
         connection.execute("PRAGMA journal_mode=WAL")
@@ -80,7 +90,7 @@ def run_explainers(prepared: dict, checkpoint: Path, directory: Path,
             connection.execute("INSERT INTO metadata VALUES ('identity',?)", (json.dumps(identity),))
         connection.execute("CREATE TABLE IF NOT EXISTS contexts (prefix_id TEXT, scenario TEXT, subset TEXT, payload TEXT, PRIMARY KEY(prefix_id,scenario,subset))")
         connection.commit()
-        cached = CachedPredictor(predictor, connection)
+        cached = CachedPredictor(predictor, connection, cache_policy)
         started = time.perf_counter()
         cpu_started = time.process_time()
         before = resource_snapshot(directory)

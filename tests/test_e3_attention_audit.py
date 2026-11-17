@@ -13,14 +13,15 @@ from nhom19_process_xai.model.training import TrainingConfig, train
 from scripts.audit_streamed_study import audit
 
 
-def test_e3_audit_links_retained_attention_and_rejects_wrong_mass(tmp_path):
+@pytest.mark.parametrize("cache_policy", ["all", "baseline"])
+def test_e3_audit_links_retained_attention_and_rejects_wrong_mass(tmp_path, cache_policy):
     config = Path(__file__).parents[1] / "configs/fixture/dataset.json"
     prepared = prepare_file(json.loads(config.read_text()), config.parent, tmp_path / "prepared.json")
     checkpoint = tmp_path / "base/checkpoint.pt"
     train(prepared, checkpoint.parent, TrainingConfig(epochs=1))
     manifest_path = tmp_path / "E3.json"
     manifest = run_streaming_study("E3", prepared, checkpoint, manifest_path)
-    run_explainers(prepared, checkpoint, tmp_path / "cache", be_only=True)
+    run_explainers(prepared, checkpoint, tmp_path / "cache", be_only=True, cache_policy=cache_policy)
     cache = tmp_path / "cache/ledger.sqlite"
     result = audit(manifest_path, tmp_path / "prepared.json", checkpoint, baseline_cache=cache)
     assert result["baseline_attention_cache"]["prefixes"] == 3
