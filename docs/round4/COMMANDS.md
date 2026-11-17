@@ -50,6 +50,12 @@ Count the exact E1 schedule without creating variants using the diagnostic below
 & .venv/Scripts/python.exe scripts/count_e1_variants.py --prepared data/processed/sepsis-v1.json --output artifacts/sepsis-v1/E1-workload-counter.json
 ```
 
+Recompute the full BPIC12 E1 storage gate directly from the pinned XES without loading the large prepared JSON. The result counts all masks and boundary replacements and restricts interior paths to the 14 highest-degree activities. The receipt stores a lower bound separately from the exact count required for a completed-run audit.
+
+```powershell
+& .venv/Scripts/python.exe scripts/count_e1_variants.py --xes-config configs/datasets/bpic12.json --induced-activities 14 --output artifacts/bpic12-v1/E1-workload-lower-bound-v2.json
+```
+
 Run E1 with a wall time quota and an optional quota for new variants. Use the same output path, dataset, checkpoint and source to resume. The SQLite ledger and prefix accumulators advance together in transactions. An incomplete session publishes progress under the sibling `E1-stream-e1-run/` directory. The result JSON appears only after all scheduled prefixes complete. Use the original source commit or its snapshot if resuming after code changes.
 
 ```powershell
