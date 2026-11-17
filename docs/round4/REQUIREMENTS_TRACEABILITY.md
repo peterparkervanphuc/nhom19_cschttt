@@ -5,7 +5,7 @@ P denotes the paper and R3.6 the locked implementation contracts. The [coverage 
 | ID | Requirement and source | Implementation location | Verification | Status |
 |---|---|---|---|---|
 | C01 | P data setup, R3.6 S1 event schema/train-only vocab/70-30 split | data/pipeline.py, data/preparation.py | test_data.py, test_preparation.py; counts and hashes in [Dataset provenance](DATASET_PROVENANCE.md) | Implemented; twelve input gates verified. Full execution tracked separately. |
-| C02 | P Fig. 1/PL1, R3.6 S2 H4/model36/head9/FFN64 | model/transformer.py | tests/test_model.py, JUnit artifacts/s0/component-tests.xml | Core unit-tested |
+| C02 | P Fig. 1/PL1, R3.6 S2 H4/model36/head9/FFN64 | model/transformer.py | tests/test_model.py, including a four-head calculation with QKᵀ/√9, [.25,.75] attention, distinct head values and identity output projection. JUnit artifacts/s0/round4-four-head-arithmetic.xml | Ten model tests passed. |
 | C03 | P PL1 10 epochs/batch12/lr.001 | model/training.py | test_training.py exact resume; base/run.json and checkpoint artifacts per log | Fixture and real baselines executed; results in EXPERIMENTAL_RESULTS.md |
 | C04 | P predictions and attention | model/predictor.py | test_training.py; predictions.json with exact prepared IDs and checkpoint hashes | Full prediction coverage for reported baselines |
 | C05 | P pp.14–16 E1, R3.6 D03/N05 | experiments/studies.py e1_prefix; experiments/e1_streaming.py | test_e1_streaming.py mid-prefix replay, exact variant counts and audited real and synthetic ledgers | Implemented. Per-log verification and measured workload limits are in the coverage table. |

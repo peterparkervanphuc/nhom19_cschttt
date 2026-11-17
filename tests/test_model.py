@@ -99,3 +99,30 @@ def test_state_roundtrip_and_eval_repeat(tmp_path):
     restored.load_state_dict(torch.load(target, weights_only=True))
     torch.testing.assert_close(output.logits, restored(ids, valid).logits, rtol=0, atol=0)
     torch.testing.assert_close(output.logits, net(ids, valid).logits, rtol=0, atol=0)
+
+
+def test_four_nine_dimensional_heads_scale_and_concatenate():
+    attention = MultiHeadAttention(ModelConfig(5, 3, 2))
+    with torch.no_grad():
+        for layer in (attention.query, attention.key, attention.value, attention.output):
+            layer.weight.zero_()
+            layer.bias.zero_()
+        attention.output.weight.copy_(torch.eye(36))
+        for head in range(4):
+            coordinate = head * 9
+            attention.query.weight[coordinate, 0] = 1
+            attention.key.weight[coordinate, 1] = 1
+            attention.value.weight[coordinate, 0] = 2 + head
+            attention.value.weight[coordinate, 1] = 4 / (3 * math.log(3))
+    hidden = torch.zeros(1, 2, 36)
+    hidden[:, :, 0] = 1
+    hidden[:, 1, 1] = 3 * math.log(3)
+    context, raw, effective = attention(hidden, torch.ones(1, 2, dtype=torch.bool))
+
+    # Each head has logits [0, 3 ln(3)] / sqrt(9), giving [.25, .75].
+    expected_weights = torch.tensor([.25, .75]).expand(1, 4, 2, 2)
+    torch.testing.assert_close(raw, expected_weights, atol=1e-6, rtol=0)
+    torch.testing.assert_close(effective, raw, atol=0, rtol=0)
+    expected_context = torch.zeros(1, 2, 36)
+    expected_context[:, :, [0, 9, 18, 27]] = torch.tensor([5., 6., 7., 8.])
+    torch.testing.assert_close(context, expected_context, atol=1e-6, rtol=0)
