@@ -1,0 +1,12 @@
+{
+  "dataset_id": "round36-five-cases",
+  "path": "../../tests/fixtures/events.csv",
+  "format": "csv",
+  "columns": {"case_id": "case_id", "activity": "activity", "timestamp": "timestamp"},
+  "source": "Round 3.6 deterministic software fixture",
+  "version": "1",
+  "license": "Project-authored software test data",
+  "scope": "fixture",
+  "split": {"train": ["c1", "c2", "c3"], "test": ["c4", "c5"]},
+  "expected_counts": {"cases": 5, "events": 13, "activities": 4}
+}

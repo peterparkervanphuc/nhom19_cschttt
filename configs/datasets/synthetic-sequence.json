@@ -1,0 +1,16 @@
+{
+  "dataset_id": "author-supplement-sequence",
+  "path": "../../data/raw/author-supplement/sequence/preprocessed.xes",
+  "format": "xes",
+  "source": "https://drive.google.com/file/d/1p-mbznaXoYI0ofqlzKGPzJ1FVcAX0Pg4/view",
+  "version": "Author supplementary archive 2024-08-12, exp_018",
+  "license": "Author-linked research supplementary material; local research copy",
+  "scope": "verified_dataset",
+  "expected_sha256": "eefa3f995af9581e9b81497962241f3806ad36f195ba62ea67a9f0bd499622a0",
+  "expected_counts": {
+    "cases": 1000,
+    "events": 12000,
+    "activities": 12
+  },
+  "seed": 42
+}

@@ -1,0 +1,22 @@
+{
+  "dataset_id": "bpic12-o-4tu-v1",
+  "path": "../../data/raw/bpic12-v1/BPI_Challenge_2012.xes.gz",
+  "format": "xes",
+  "source": "https://doi.org/10.4121/uuid:3926db30-f712-4394-aebc-75976070e91f",
+  "version": "1",
+  "license": "4TU General Terms of Use, August 2016; attribution and noncommercial research",
+  "scope": "verified_dataset",
+  "expected_sha256": "5cd9cc16b9bcb20bd4aae45666a5d87479ddbf47e6371618b6ad217174cecdf3",
+  "expected_counts": {
+    "cases": 5015,
+    "events": 31244,
+    "activities": 7
+  },
+  "seed": 42,
+  "filters": [
+    {
+      "kind": "activity_prefix",
+      "value": "O_"
+    }
+  ]
+}

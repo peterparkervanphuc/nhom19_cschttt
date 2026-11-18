@@ -1,0 +1,16 @@
+{
+  "dataset_id": "author-supplement-complex-model",
+  "path": "../../data/raw/author-supplement/complex-model/preprocessed.xes",
+  "format": "xes",
+  "source": "https://drive.google.com/file/d/1p-mbznaXoYI0ofqlzKGPzJ1FVcAX0Pg4/view",
+  "version": "Author supplementary archive 2024-08-12, exp_022",
+  "license": "Author-linked research supplementary material; local research copy",
+  "scope": "verified_dataset",
+  "expected_sha256": "c1decc0238020f91f0441de281186cedd720a626a36ae29174e0fdfd972d4324",
+  "expected_counts": {
+    "cases": 5000,
+    "events": 76535,
+    "activities": 15
+  },
+  "seed": 42
+}

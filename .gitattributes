@@ -1,0 +1,4 @@
+# Run identities hash these source and fixture bytes.
+src/nhom19_process_xai/**/*.py text eol=lf
+configs/**/*.json text eol=lf
+tests/fixtures/*.csv text eol=lf
