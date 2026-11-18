@@ -1,0 +1,8 @@
+{
+  "epochs": 10,
+  "batch_size": 12,
+  "learning_rate": 0.001,
+  "seed": 1729,
+  "profile": "BASE",
+  "num_threads": 1
+}
