@@ -1,4 +1,6 @@
 .venv*/
+.venv/
+.venv-rebuild/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -10,3 +12,9 @@ dist/
 data/raw/
 data/processed/
 artifacts/
+.agents/
+.github/
+.idea/
+docs/
+reports/
+README.md
