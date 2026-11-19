@@ -1,6 +1,7 @@
 """Verify a completed BE graph, its AE schedule, and any completed AE output."""
 
 import argparse
+from collections import defaultdict
 from contextlib import closing
 import json
 from pathlib import Path
@@ -15,6 +16,25 @@ from nhom19_process_xai.graphs.relations import merge_prune
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def unreachable_removed_edges(remaining, removed):
+    """Find removed edges whose endpoints have no remaining directed path."""
+    successors = defaultdict(set)
+    for source, target in remaining:
+        successors[source].add(target)
+    targets_by_source = defaultdict(set)
+    for edge in removed:
+        targets_by_source[edge["source"]].add(edge["target"])
+    lost = []
+    for source, targets in targets_by_source.items():
+        reached, pending = {source}, [source]
+        while pending and not targets <= reached:
+            new = successors[pending.pop()] - reached
+            reached.update(new)
+            pending.extend(new)
+        lost.extend((source, target) for target in targets - reached)
+    return sorted(lost)
 
 
 def context_rows(db, prefixes, relevant_positions, targets_by_prefix):
@@ -65,7 +85,7 @@ def context_rows(db, prefixes, relevant_positions, targets_by_prefix):
             require(count == limit, "AE subset schedule incomplete")
 
 
-def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
+def audit(directory, prepared_path, checkpoint_path, *, be_only=False, check_reachability=False):
     ledger = directory / "ledger.sqlite"
     wal = ledger.with_suffix(".sqlite-wal")
     require(not (directory / "writer.lock").exists() and (not wal.exists() or wal.stat().st_size == 0),
@@ -92,6 +112,8 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
     edges = set()
     classes = set(identity["class_order"])
     text_bytes_floor = 0
+    reachability = {"pruning_steps_with_loss": 0, "removed_edge_events_without_path": 0,
+                    "first_loss": None}
     for record in be["prefix_records"]:
         prefix_id = record["prefix_id"]
         prefix = prefixes[prefix_id]
@@ -106,6 +128,13 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
         edges, removed = merge_prune(edges, local)
         require(record["removed"] == json.loads(json.dumps(removed))
                 and set(map(tuple, record["remaining_edges"])) == edges, "BE pruning mismatch")
+        if check_reachability and removed:
+            lost = unreachable_removed_edges(edges, removed)
+            if lost:
+                reachability["pruning_steps_with_loss"] += 1
+                reachability["removed_edge_events_without_path"] += len(lost)
+                if reachability["first_loss"] is None:
+                    reachability["first_loss"] = {"prefix_id": prefix_id, "edge": lost[0]}
         positions[prefix_id] = [i for i, label in enumerate(prefix["activities"]) if label in relevant]
         occurrence_bytes = sum(len(json.dumps(value)) - 2 for value in prefix["occurrence_ids"])
         # Prefix IDs are stored in the row and payload. The payload seal adds 64 hex digits.
@@ -116,11 +145,12 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
     expected = sum(row["expected"] for row in schedule.values())
     require(schedule == coverage["per_prefix"] and expected == coverage["expected"],
             "AE per-prefix schedule mismatch")
+    diagnostic = {"be_pruning_reachability": reachability} if check_reachability else {}
     if be_only:
         return {"status": "verified", "scope": "BE graph and AE schedule", "prefixes": len(prefixes),
                 "be_edges": len(edges), "be_sha256": file_hash(directory / "BE.json"),
                 "ae_scheduled_contexts": expected, "ae_max_positions": max(map(len, positions.values()), default=0),
-                "ae_context_text_bytes_floor": text_bytes_floor}
+                "ae_context_text_bytes_floor": text_bytes_floor, **diagnostic}
     require(coverage["status"] == "completed", "Complete AE is required")
     require(ledger.stat().st_size >= text_bytes_floor, "AE ledger is smaller than the context text floor")
     ae = read_sealed(directory / "AE.json")
@@ -141,7 +171,7 @@ def audit(directory, prepared_path, checkpoint_path, *, be_only=False):
     return {"status": "verified", "prefixes": len(prefixes), "contexts": expected,
             "be_edges": len(edges), "ae_edges": len(ae["edges"]),
             "be_sha256": file_hash(directory / "BE.json"), "ae_sha256": file_hash(directory / "AE.json"),
-            "ledger_sha256": file_hash(ledger), "ae_context_text_bytes_floor": text_bytes_floor}
+            "ledger_sha256": file_hash(ledger), "ae_context_text_bytes_floor": text_bytes_floor, **diagnostic}
 
 
 if __name__ == "__main__":
@@ -150,5 +180,8 @@ if __name__ == "__main__":
     parser.add_argument("--prepared", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--be-only", action="store_true", help="Audit BE and the scheduled AE workload")
+    parser.add_argument("--check-reachability", action="store_true",
+                        help="Count pruning steps that remove every path between a deleted edge's endpoints")
     args = parser.parse_args()
-    print(json.dumps(audit(args.run, args.prepared, args.checkpoint, be_only=args.be_only)))
+    print(json.dumps(audit(args.run, args.prepared, args.checkpoint, be_only=args.be_only,
+                           check_reachability=args.check_reachability)))
