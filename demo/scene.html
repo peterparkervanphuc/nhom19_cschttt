@@ -1,0 +1,66 @@
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:dark;--fg:#eef3e9;--mute:#b1c1b9;--mint:#b7edaf;--ink:#111c1b}
+*{box-sizing:border-box}body{margin:0;background:var(--ink);color:var(--fg);font:16px/1.5 "Segoe UI",sans-serif}
+main{position:relative;isolation:isolate;min-height:532px;overflow:hidden;border:1px solid #384943;background:radial-gradient(ellipse at 76% 50%,#233a32 0,transparent 58%)}
+header,footer{position:absolute;left:5%;right:5%;display:flex;justify-content:space-between;align-items:center;gap:12px;font:11px/1.4 Consolas,monospace;letter-spacing:.08em;color:var(--mute)}
+header{top:23px;border-bottom:1px solid #ffffff28;padding-bottom:13px}header strong{color:var(--mint)}footer{bottom:16px}article{position:relative;width:51%;padding:100px 0 65px 5%;pointer-events:none}
+h1{font:normal clamp(42px,5.7vw,82px)/.99 Georgia,serif;letter-spacing:-.049em;margin:0 0 18px}
+p{font-size:15px;max-width:39ch;color:#d1dbd1;margin:0}.stage h1{font-size:clamp(36px,5vw,68px)}.shape{color:var(--mint);font:1rem Consolas,monospace}
+figure{position:absolute;inset:15% 1% 9% 49%;margin:0}canvas{width:100%;height:100%;touch-action:pan-y;cursor:grab}
+button{background:transparent;border:1px solid #799087;color:var(--fg);padding:5px 9px;border-radius:3px;cursor:pointer}button:focus-visible,canvas:focus-visible{outline:2px solid var(--mint)}
+@media(max-width:660px){main{min-height:535px}article{width:100%;padding:75px 6% 0}h1{font-size:46px}p{max-width:48ch}figure{inset:49% 6% 8%}header span{display:none}footer{font-size:9px}}
+</style>
+<main><header><strong>◉　NEURAL OBSERVATORY</strong><span>PROCESS MINING　/　XAI</span></header>
+<article><h1 id="title"></h1><p id="desc"></p><p class="shape" id="shape"></p></article>
+<figure><canvas tabindex="0" aria-label="Minh họa khái niệm trong không gian ba chiều. Dùng phím mũi tên để xoay."></canvas></figure>
+<footer><span>HÌNH HỌC MINH HỌA　/　3D</span><button id="play" type="button">Tạm dừng</button></footer></main>
+<script>
+const cfg=__CONFIG__;
+const isStage=cfg.stage!==null;
+document.querySelector('main').classList.toggle('stage',isStage);
+document.querySelector('#title').textContent=cfg.title;
+document.querySelector('#desc').textContent=cfg.desc;
+document.querySelector('#shape').textContent=cfg.shape;
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
+const motion=matchMedia('(prefers-reduced-motion: reduce)');
+let running=!motion.matches, angle=.42, time=0, previous=0, raf=0, down=null;
+const btn=document.querySelector('#play');
+const vertices=[];
+const tau=Math.PI*2;
+if(isStage){
+ for(let k=0;k<6;k++)for(let i=0;i<21;i++)for(let j=0;j<24;j++)
+ vertices.push([(k-2.5)*.42,(i-10)*.066,(j-11.5)*.052,k,k===cfg.stage?1:.26]);
+}else{
+ // Folded toroidal surface. Every point is illustrative, independent of inference.
+ for(let i=0;i<124;i++)for(let j=0;j<56;j++){
+ const u=i*tau/124,v=j*tau/56;
+ const ridge=.31+.12*Math.sin(3*u+v)+.045*Math.cos(6*u-2*v);
+ const r=.68+ridge*Math.cos(v);
+ vertices.push([r*Math.cos(u),r*Math.sin(u),ridge*Math.sin(v)+.27*Math.sin(2*u),j,.45+.45*Math.cos(v)]);
+ }
+}
+function draw(){
+ if(!ctx)return;
+ const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio,2);
+ if(canvas.width!==Math.round(w*d)||canvas.height!==Math.round(h*d)){canvas.width=Math.round(w*d);canvas.height=Math.round(h*d)}
+ ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);
+ const s=Math.min(w*.36,h*.39),a=angle+.12*Math.sin(time),c=Math.cos(a),sn=Math.sin(a);
+ for(const [x,y,z,k,b] of vertices){
+ const xx=c*x+sn*z,zz=c*z-sn*x,yy=.82*y-.57*zz,depth=.57*y+.82*zz;
+ const scale=s*(1+.16*depth),px=w*.49+xx*scale,py=h*.5+yy*scale;
+ const bright=Math.max(.09,Math.min(.97,.36+.26*depth+.38*b));
+ ctx.fillStyle=(isStage?k===cfg.stage:k%11<2)?'rgba(214,242,155,'+bright+')':'rgba(143,212,190,'+bright+')';
+ const radius=.85+.48*(depth+1);ctx.fillRect(px,py,radius,radius);
+ }
+}
+function loop(now){if(!running){raf=0;return}if(now-previous>=40){time+=.014;draw();previous=now}raf=requestAnimationFrame(loop)}
+function update(){btn.textContent=running?'Tạm dừng':'Chuyển động';if(running&&!raf)raf=requestAnimationFrame(loop);draw()}
+btn.onclick=()=>{running=!running;update()};
+motion.onchange=()=>{running=!motion.matches;update()};
+canvas.onpointerdown=e=>{down=e.clientX;canvas.setPointerCapture(e.pointerId)};
+canvas.onpointermove=e=>{if(down!==null){angle+=(e.clientX-down)*.008;down=e.clientX;draw()}};
+canvas.onpointerup=canvas.onpointercancel=()=>down=null;
+canvas.onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();angle+=e.key==='ArrowLeft'?-.15:.15;draw()}};
+new ResizeObserver(draw).observe(canvas);update();
+</script></html>
