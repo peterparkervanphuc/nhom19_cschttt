@@ -1,0 +1,64 @@
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:dark;--bg:#101e1c;--line:#3a5048;--mute:#b1c5b8;--hi:#cbecab;--text:#edf0e6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "Segoe UI",sans-serif}
+main{padding:clamp(16px,3vw,40px)}header{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--line);margin-bottom:20px;gap:12px}
+h1,h2{font:normal 34px/1.15 Georgia,serif;margin:0 0 12px}header small,.meta,dt{font:12px/1.5 Consolas,monospace;color:var(--mute)}
+.layout{display:grid;grid-template-columns:minmax(150px,.85fr) minmax(270px,1.7fr) minmax(190px,1fr);align-items:center;gap:clamp(12px,2vw,32px)}
+nav{position:relative}nav:before{content:"";position:absolute;left:16px;top:18px;bottom:20px;border-left:1px solid var(--line)}
+button{cursor:pointer;font:inherit;color:inherit}nav button{position:relative;display:flex;align-items:center;gap:12px;background:none;border:0;text-align:left;padding:8px 0;width:100%}
+nav b{background:var(--bg);border:1px solid var(--line);border-radius:50%;font:12px Consolas;padding:7px}nav small{display:block;color:var(--mute);font-size:12px}
+button:hover,nav button[aria-current=step]{color:var(--hi)}nav button[aria-current=step] b{background:var(--hi);color:var(--bg)}
+button:focus-visible{outline:2px solid var(--hi);outline-offset:2px}svg{width:100%;display:block}article{border-left:1px solid var(--line);padding-left:20px}
+h2{font-size:29px;margin-top:6px}article p{max-width:38ch}dl{margin:14px 0}dd{margin:2px 0 10px}code{color:var(--hi)}
+.actions{display:flex;gap:8px;margin-top:18px}.actions button{background:transparent;border:1px solid #627c6d;padding:6px 14px;border-radius:4px}.actions button:disabled{opacity:.35;cursor:default}
+.module{cursor:pointer}.module .surface{fill:#37574c;transition:fill .2s}.module.active .surface{fill:#c2e4a8}.module.active text{fill:#d9edc6}
+h1,h2{font-family:Cambria,"Times New Roman",serif}
+svg{max-height:490px}
+@media(max-width:750px){.layout{grid-template-columns:1fr}.layout nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}nav:before{display:none}svg{max-height:305px}article{border-top:1px solid var(--line);border-left:0;padding:14px 0 0}header{display:block}header small{display:block;margin-bottom:12px}main{padding:16px}}
+.signal{opacity:0}.active .signal{opacity:1;stroke-dasharray:4 23;animation:flow 2s linear infinite}@keyframes flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-27}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<main><header><h1>Từ sự kiện đến dự đoán</h1><small>ProcessTransformer · Một khối encoder</small></header>
+<div class="layout"><nav aria-label="Các tầng xử lý"></nav><svg viewBox="0 0 360 365" role="img" aria-label="Sáu mô-đun nối tiếp từ embedding đến phân loại"></svg>
+<article aria-live="polite"><span class="meta" id="counter"></span><h2></h2><p id="detail"></p><dl><dt>Đầu vào</dt><dd id="inp"></dd><dt>Đầu ra</dt><dd id="out"></dd></dl><code id="formula"></code><div class="actions"><button id="prev">← Trước</button><button id="next">Tiếp →</button></div></article></div></main>
+<script>
+const stages=__STAGES__;
+const io=[
+ ['Mã hóa sự kiện','ID hoạt động và vị trí','n vector, mỗi vector 36 chiều','X = E(activity) + E(position)'],
+ ['Trộn thông tin','X · n × 36','Ngữ cảnh đã chiếu · n × 36','M = softmax(QKᵀ / √9)'],
+ ['Ổn định biểu diễn','X và ngữ cảnh attention','Biểu diễn chuẩn hóa · n × 36','H = LayerNorm(X + attention)'],
+ ['Biến đổi từng vị trí','H · n × 36','Biểu diễn sau cộng dư · n × 36','36 → 64 → ReLU → 36'],
+ ['Gộp tiền tố','Vector từng vị trí và mặt nạ hợp lệ','Một vector 36 chiều','g = Σ validᵢ Hᵢ / max(1, Σ validᵢ)'],
+ ['Ước lượng xác suất','Vector g · 36 chiều','Phân phối trên các lớp hoạt động','36 → 64 → ReLU → logits → softmax']];
+const nav=document.querySelector('nav'), diagram=document.querySelector('svg');
+let selected=0;
+stages.forEach(([name],i)=>{
+ const b=document.createElement('button');b.innerHTML='<b>0'+(i+1)+'</b><span>'+name+'<small>'+io[i][0]+'</small></span>';b.onclick=()=>select(i);nav.append(b)
+});
+function mesh(i){
+ if(i===1)return [0,1,2,3].map(j=>'<path d="M'+(14+j*16)+' 0q22 -12 45 2" fill="none" stroke-width="1.8"/>').join('');
+ if(i===4)return '<path d="M22 -5l39 8 42 -4M32 -9l29 12 30 0M9 -1l52 4 22 4" fill="none"/>';
+ if(i===5)return [0,1,2,3,4].map((j)=>'<path d="M'+(24+j*13)+' '+(-6+j*1.5)+'l'+[11,17,26,15,8][j]+' 3" stroke-width="3"/>').join('');
+ const count=[9,4,2,6,3,5][i];let lines='';
+ for(let j=1;j<count;j++){const f=j/count;lines+='<path d="M'+(32*f)+' '+(-14*f)+'l98 12" />'}
+ for(let j=1;j<7;j++){const f=j/7;lines+='<path d="M'+(98*f)+' '+(12*f)+'l32 -14" />'}
+ return lines;
+}
+diagram.innerHTML='<defs><marker id="arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0 0 L5 2.5 0 5" fill="#94b59b"/></marker></defs>'+stages.map(([name],i)=>{
+ const y=29+58*i,x=45+i*3;
+ return '<g class="module" transform="translate('+x+' '+y+')"><title>'+name+'</title><rect x="-3" y="-17" width="280" height="54" fill="transparent"/>'+
+ (i<5?'<path d="M65 18v23" stroke="#94b59b" marker-end="url(#arrow)"/><path class="signal" d="M65 18v23" stroke="#e4f5bb" stroke-width="2"/>':'')+
+ '<path d="M0 0l98 12 32 -14 v9 l-32 15 -98 -12z" fill="#233b34" stroke="#729481"/><path class="surface" d="M0 0l32 -14 98 12 -32 14z"/><g stroke="#253d32" stroke-width=".85">'+mesh(i)+'</g>'+
+ '<path d="M134 1h20" stroke="#73927f"/><text x="160" y="6" fill="#a5b6ac" font-family="Segoe UI,sans-serif" font-size="13">'+name+'</text></g>'
+}).join('');
+const modules=[...diagram.querySelectorAll('.module')];
+modules.forEach((m,i)=>m.onclick=()=>select(i));
+function select(i){
+ selected=i;[...nav.children].forEach((b,k)=>b.setAttribute('aria-current',k===i?'step':'false'));modules.forEach((m,k)=>m.classList.toggle('active',k===i));
+ document.querySelector('h2').textContent=stages[i][0];detail.textContent=stages[i][1];
+ counter.textContent='Tầng 0'+(i+1)+' / 06';inp.textContent=io[i][1];out.textContent=io[i][2];formula.textContent=io[i][3];
+ prev.disabled=i===0;next.disabled=i===5
+}
+prev.onclick=()=>select(selected-1);next.onclick=()=>select(selected+1);select(0);
+</script></html>

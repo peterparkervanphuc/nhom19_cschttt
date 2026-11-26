@@ -35,6 +35,26 @@ For the pinned CPU environment:
 python -m pip install -r requirements-cpu.lock
 ```
 
+## Interactive Demo
+
+The project includes a local Streamlit demo in `demo/`. It provides direct inference, attention visualization, guided examples, results, and architectural views.
+
+Create a separate Windows demo environment:
+
+```powershell
+python -m venv .venv-demo
+.venv-demo\Scripts\python -m pip install --upgrade pip setuptools
+.venv-demo\Scripts\python -m pip install -r demo/requirements.txt
+```
+
+Start the demo:
+
+```cmd
+demo\run.cmd
+```
+
+Open `http://127.0.0.1:8501`. Choose **Mô hình**, select a test prefix and click **Chạy dự đoán**. Follow the attention link to inspect the same prediction under both interventions. Live inference needs matching files in `data/processed/` and `artifacts/<dataset>/base/`. **Dẫn giải** uses the sealed local examples independently of those files. **Kết quả** reads the V6.1 report tables in `reports/final-academic-v6.1-style/tables/`.
+
 ## Quick Start
 
 Run the project pipeline against the deterministic software fixture:
@@ -153,10 +173,27 @@ configs/    Dataset and training configurations
 scripts/    Auditing, comparison, and result-generation utilities
 src/        Installable Python package
 tests/      Unit and integration tests
+demo/       Local Streamlit demonstration and visualization
 artifacts/  Generated local outputs (ignored by Git)
 data/       Local datasets and generated data (ignored by Git)
 docs/       Research documentation (ignored by Git)
 reports/    Local reports and PDF/LaTeX output (ignored by Git)
+```
+
+## Recovering a Stale Pipeline Lock
+
+On Windows, a pipeline run creates `writer.lock` in its output directory. Use the recovery utility only after confirming that the original process has stopped:
+
+Check whether the lock is stale:
+
+```powershell
+python scripts/recover_run_lock.py artifacts/fixture-run
+```
+
+Remove the stale lock:
+
+```powershell
+python scripts/recover_run_lock.py artifacts/fixture-run --remove
 ```
 
 ## Dataset Configuration

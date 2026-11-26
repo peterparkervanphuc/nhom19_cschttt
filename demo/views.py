@@ -47,42 +47,105 @@ def distribution(r, arms):
     st.dataframe(frame.style.format("{:.2%}"),width="stretch",height="content")
 
 
+def probability_chart(r):
+    probs = r["probabilities"]
+    classes = sorted(range(len(r["classes"])), key=lambda j:max(p[j] for p in probs), reverse=True)
+    colors = ["#176553", "#78934e", "#526d83"]
+
+    def render(indices):
+        groups = []
+        for j in indices:
+            bars = []
+            for condition, p, color in zip(CONDITIONS, probs, colors):
+                bars.append(f'<div class="measure"><span>{condition}</span>'
+                            f'<i style="--origin:0%;--left:0%;--width:{p[j]:.6%};--color:{color}"><b></b></i>'
+                            f'<code>{p[j]:.2%}</code></div>')
+            groups.append(f'<section><strong>{escape(r["classes"][j])}</strong>{"".join(bars)}</section>')
+        st.html('<figure class="evidence-chart"><figcaption>Xác suất dự đoán · 0–100%</figcaption>'
+                + "".join(groups) + '</figure>')
+
+    st.markdown("**Ba phân phối xác suất theo hoạt động**")
+    render(classes[:5])
+    if len(classes) > 5:
+        with st.expander(f"Xem {len(classes)-5} hoạt động còn lại"):
+            render(classes[5:])
+
+
+def compare_positions(results):
+    first = results[0][0]
+    base = first["probabilities"][0]
+    st.write(f"Dự đoán gốc · **{first['classes'][base.index(max(base))]}** · {max(base):.2%}")
+    records = [r for r, fresh in results]
+    for col, (r, fresh) in zip(st.columns(2), results):
+        with col:
+            pos = r["pos"]
+            st.markdown(f"**{pos+1} · {r['activities'][pos]}**")
+            st.caption("Suy luận trực tiếp" if fresh else "Kết quả đã lưu trong phiên")
+            for arm in (1, 2):
+                p = r["probabilities"][arm]
+                label = r["classes"][p.index(max(p))]
+                st.metric(f"{CONDITIONS[arm]} · TVD so với gốc", f"{r['tvd'][arm-1]:.4f}")
+                st.write(f"{label} · {max(p):.2%}")
+    selected = st.radio("Xem phân phối khi che vị trí", [0, 1], horizontal=True,
+                        format_func=lambda i:f"{records[i]['pos']+1} · {records[i]['activities'][records[i]['pos']]}")
+    probability_chart(records[selected])
+    provenance(records[selected])
+
+
 def compare(r):
     st.markdown("**Khoảng cách giữa các phân phối (TVD)**")
     for c,title,v in zip(st.columns(3),["Gốc / đầu vào","Gốc / attention","Giữa hai cách che"],r["tvd"]):
         c.metric(title,f"{v:.4f}")
     st.caption("TVD bằng một nửa tổng sai khác tuyệt đối giữa xác suất các lớp. Giá trị 0 tương ứng với hai phân phối trùng nhau.")
-    distribution(r,[0,1,2])
+    probability_chart(r)
+    with st.expander("Bảng xác suất theo thứ tự lớp"):
+        distribution(r,[0,1,2])
 
 
 def heatmap(r):
-    a,b=st.columns(2)
-    head=a.selectbox("Attention head",range(len(r["attention"][0])),format_func=lambda h:f"Head {h+1}")
-    arm=b.selectbox("Ma trận", [0,1],format_func=lambda i:["Gốc","Sau khi che attention"][i])
-    matrix=r["attention"][arm][head]
-    axis=[str(i+1) for i in range(len(matrix))]
-    cells=[{"query":axis[i],"key":axis[j],"weight":v,"source":r["activities"][i],"destination":r["activities"][j]}
-           for i,row in enumerate(matrix) for j,v in enumerate(row)]
-    st.vega_lite_chart(pd.DataFrame(cells),{"height":min(520,max(150,20*len(matrix))),"mark":"rect",
-        "encoding":{"x":{"field":"key","type":"ordinal","sort":axis,"title":"Vị trí key"},
-        "y":{"field":"query","type":"ordinal","sort":axis,"title":"Vị trí query"},
-        "color":{"field":"weight","type":"quantitative","title":"Trọng số","scale":{"domain":[0,1],"scheme":"tealblues"}},
-        "tooltip":[{"field":f,"title":n} for f,n in [("query","Vị trí query"),("source","Hoạt động query"),("key","Vị trí key"),("destination","Hoạt động key"),("weight","Trọng số")]]}},alt="Trọng số attention theo cặp vị trí")
-
-
+    a, b = st.columns(2)
+    head = a.selectbox("Attention head", range(len(r["attention"][0])), format_func=lambda h:f"Head {h+1}")
+    arm = b.radio("Ma trận", [0,1], format_func=lambda i:["Gốc","Sau khi che attention"][i], horizontal=True)
+    matrix = r["attention"][arm][head]
+    names = r["activities"]
+    blocks = list(range(0, len(names), 12))
+    def window_label(start):
+        return f"{start+1}–{min(start+12,len(names))}"
+    row_start = col_start = 0
+    if len(blocks) > 1:
+        row_start = a.selectbox("Nhóm hàng query", blocks, format_func=window_label)
+        col_start = b.selectbox("Nhóm cột key", blocks, format_func=window_label)
+    keys = range(col_start, min(col_start+12,len(names)))
+    queries = range(row_start, min(row_start+12,len(names)))
+    def label(i):
+        return f"{i+1} · {escape(names[i])}"
+    header = "".join(f'<th scope="col" title="{label(j)}">K{j+1}</th>' for j in keys)
+    rows = []
+    for i in queries:
+        cells = []
+        for j in keys:
+            weight = matrix[i][j]
+            rgb = tuple(round(low + weight*(high-low)) for low,high in [(236,16),(244,91),(235,75)])
+            color = "white" if weight > .62 else "#102b24"
+            tip = f"Q{label(i)} → K{label(j)} · {weight:.6f}"
+            focus = "marked" if r["pos"] in (i,j) else ""
+            cells.append(f'<td class="{focus}" style="background:rgb{rgb};color:{color}" title="{tip}">{weight:.3f}</td>')
+        rows.append(f'<tr><th scope="row" title="{label(i)}">Q{i+1}</th>{"".join(cells)}</tr>')
+    st.html(f'<div class="matrix-scroll" tabindex="0" aria-label="Ma trận attention, có thể cuộn"><table class="matrix"><caption>Attention · Head {head+1} · hàng query × cột key</caption><thead><tr><td></td>{header}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
+    st.html('<div class="matrix-key">0 <i></i> 1　·　Trọng số attention</div>')
+    st.caption(f"Viền đánh dấu hàng và cột của vị trí {r['pos']+1}. Chỉ số Q và K theo thứ tự sự kiện. Di chuột vào ô để đọc tên hoạt động và trọng số.")
     with st.expander("Liên kết từ một vị trí truy vấn",on_change="rerun") as links:
         if links.open:
-            q=st.selectbox("Vị trí truy vấn",range(len(matrix)),index=r["pos"],
-                           format_func=lambda i:f"{i+1} · {r['activities'][i]}")
-            links_svg=[]
-            height=max(70,32*len(matrix))
-            for j,value in enumerate(matrix[q]):
-                y=16+32*j
-                label=escape(r["activities"][j])
-                links_svg.append(f'<path d="M68 {height/2} C140 {height/2} 150 {y} 220 {y}" stroke="#318471" fill="none" stroke-width="{8*value}"/><circle cx="220" cy="{y}" r="3" fill="#183e36"/><text x="230" y="{y+4}">{j+1}. {label} · {value:.4f}</text>')
-            svg=(f'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="{height}" font-family="sans-serif" font-size="13"><text x="4" y="{height/2+4}">Query {q+1}</text>'+''.join(links_svg)+'</svg>')
-            st.image(svg,width=640,alt="Liên kết attention của query đã chọn với các vị trí key")
-            st.caption("Độ dày của mỗi đường bằng 8 × trọng số attention. Giá trị bằng 0 không tạo đường nối.")
+            q = st.selectbox("Vị trí truy vấn",range(len(matrix)),index=r["pos"],format_func=lambda i:f"{i+1} · {names[i]}")
+            height = 32*len(keys)+16
+            paths = []
+            for index,j in enumerate(keys):
+                value = matrix[q][j]
+                y = 20+32*index
+                paths.append(f'<path d="M65 {height/2} C130 {height/2} 140 {y} 200 {y}" stroke="#318471" fill="none" stroke-width="{8*value}"/><circle cx="200" cy="{y}" r="3" fill="#183e36"/><text x="210" y="{y+4}">K{j+1} · {value:.4f}</text>')
+            svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 {height}" width="340" height="{height}"><g font-family="sans-serif" font-size="13"><text x="4" y="{height/2+4}">Q{q+1}</text>{"".join(paths)}</g></svg>'
+            st.image(svg,width="content",alt="Trọng số từ vị trí query đã chọn đến các key đang xem")
+            st.caption("Độ dày cạnh bằng 8 × trọng số. Mỗi đích tương ứng với một cột trong cửa sổ ma trận.")
 
 
 def provenance(r):
